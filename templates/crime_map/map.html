@@ -5,7 +5,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-    #map { height: 65vh; width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); }
+    #map { height: 65vh; width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #f8f9fa; }
     .filter-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
     .filter-bar .field { margin-bottom: 0; min-width: 130px; flex: 1 1 130px; }
     .legend {
@@ -30,6 +30,20 @@
     .leaflet-popup-content .crime-val { color: #000; font-weight: 600; }
     .map-marker-icon { background: transparent; border: none; }
     .marker-cluster { background: transparent; border: none; }
+    .heatmap-legend {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.85rem;
+        padding: 0.5rem 0;
+    }
+    .heatmap-legend .gradient-bar {
+        width: 200px;
+        height: 12px;
+        border-radius: 6px;
+        background: linear-gradient(to right, #3b82f6, #22c55e, #eab308, #f97316, #ef4444);
+    }
+    .heatmap-legend .label { font-size: 0.75rem; color: var(--text-2); }
     @media (max-width: 768px) {
         #map { height: 50vh; }
     }
@@ -38,8 +52,8 @@
 
 {% block content %}
 <div class="page-header">
-    <h1><i class="bi bi-map"></i> Crime Map</h1>
-    <p>Interactive crime risk visualization</p>
+    <h1><i class="bi bi-map"></i> Crime Risk Map</h1>
+    <p>Interactive crime density visualization — warmer colors indicate higher crime concentration</p>
 </div>
 
 <div class="card">
@@ -75,11 +89,11 @@
     </form>
 
     <div class="legend">
-        <div class="item"><span class="swatch" style="background:#3b82f6;"></span> Very Low Density</div>
-        <div class="item"><span class="swatch" style="background:#22c55e;"></span> Low Density</div>
-        <div class="item"><span class="swatch" style="background:#eab308;"></span> Moderate Density</div>
-        <div class="item"><span class="swatch" style="background:#f97316;"></span> High Density</div>
-        <div class="item"><span class="swatch" style="background:#ef4444;"></span> Very High Density</div>
+        <div class="item"><span class="swatch" style="background:#3b82f6;"></span> Very Low</div>
+        <div class="item"><span class="swatch" style="background:#22c55e;"></span> Low</div>
+        <div class="item"><span class="swatch" style="background:#eab308;"></span> Moderate</div>
+        <div class="item"><span class="swatch" style="background:#f97316;"></span> High</div>
+        <div class="item"><span class="swatch" style="background:#ef4444;"></span> Very High</div>
     </div>
 </div>
 
@@ -88,10 +102,12 @@
         <div>
             Showing <strong>{{ shown_count }}</strong> of <strong>{{ total_count }}</strong> records.
             {% if shown_count == 0 %}
-                <span class="help">No data matches the current filters{% if total_count == 0 %} &mdash; upload a CSV first{% endif %}.</span>
+                <span class="help">No data matches the current filters{% if total_count == 0 %} — upload a CSV first{% endif %}.</span>
             {% endif %}
         </div>
         <div class="btn-group">
+            <button class="btn btn-sm active" id="toggle-heatmap">Heatmap</button>
+            <button class="btn secondary btn-sm" id="toggle-clustering">Clusters</button>
             <button class="btn secondary btn-sm" id="toggle-fullscreen">
                 <i class="bi bi-arrows-fullscreen"></i> Fullscreen
             </button>
@@ -99,12 +115,19 @@
     </div>
 
     <div id="map"></div>
+
+    <div class="heatmap-legend">
+        <span class="label">Low</span>
+        <div class="gradient-bar"></div>
+        <span class="label">High</span>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 {{ points|json_script:"crime-points-data" }}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.9.3/dist/leaflet-heat.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
@@ -117,6 +140,15 @@
         "Moderate": "#eab308",
         "High": "#f97316",
         "Very High": "#ef4444",
+    };
+
+    const HEAT_GRADIENT = {
+        0.0: '#3b82f6',
+        0.2: '#22c55e',
+        0.4: '#eab308',
+        0.6: '#f97316',
+        0.8: '#ef4444',
+        1.0: '#7f1d1d',
     };
 
     function riskClass(level) {
@@ -134,7 +166,7 @@
             ["Assault", p.total_assaults, p.assault_risk],
         ];
         const rows = crimeRows.map(([name, count, risk]) =>
-            `<div class="crime-row"><span class="crime-name">${name}</span><span class="crime-val">${(risk * 100).toFixed(1)}%</span></div>`
+            `<div class="crime-row"><span class="crime-name">${name}</span><span class="crime-val">${count} (${(risk * 100).toFixed(1)}%)</span></div>`
         ).join("");
         return `
             <div style="min-width:220px; font-family:var(--font); background: #fff; color: #000; padding: 10px; border-radius: 8px;">
@@ -145,7 +177,8 @@
                 <hr style="margin:8px 0; border-color:#dee2e6;">
                 ${rows}
                 <div style="margin-top:6px; color:#666;">
-                    Crime risk score: <strong>${(p.crime_risk_score * 100).toFixed(1)}%</strong>
+                    Total crimes: <strong>${p.total_crimes}</strong> &middot;
+                    Score: <strong>${(p.crime_risk_score * 100).toFixed(1)}%</strong>
                 </div>
                 <a href="${googleMapsUrl}" target="_blank" rel="noopener" style="display:inline-block; margin-top:8px; color:#000; text-decoration:none; font-size:12px;">
                     View on Google Maps <i class="bi bi-box-arrow-up-right" style="font-size:10px;"></i>
@@ -153,8 +186,26 @@
             </div>`;
     }
 
-    let map, markers = [], useClustering = false;
+    let map, markers = [], heatmapLayer = null, useClustering = false;
     let markerClusterer = null;
+    const heatBtn = document.getElementById("toggle-heatmap");
+    const clusterBtn = document.getElementById("toggle-clustering");
+
+    function setActiveMode(mode) {
+        useClustering = mode === "cluster";
+        if (useClustering) {
+            clusterBtn.classList.add("active");
+            clusterBtn.classList.remove("secondary");
+            heatBtn.classList.remove("active");
+            heatBtn.classList.add("secondary");
+        } else {
+            heatBtn.classList.add("active");
+            heatBtn.classList.remove("secondary");
+            clusterBtn.classList.remove("active");
+            clusterBtn.classList.add("secondary");
+        }
+        renderPoints();
+    }
 
     function initMap() {
         const center = POINTS.length
@@ -170,6 +221,8 @@
 
         renderPoints();
 
+        heatBtn.addEventListener("click", () => setActiveMode("heat"));
+        clusterBtn.addEventListener("click", () => setActiveMode("cluster"));
         document.getElementById("toggle-fullscreen").addEventListener("click", () => {
             const mapEl = document.getElementById("map");
             if (!mapEl) return;
@@ -188,6 +241,10 @@
         }
         markers.forEach(m => map.removeLayer(m));
         markers = [];
+        if (heatmapLayer) {
+            map.removeLayer(heatmapLayer);
+            heatmapLayer = null;
+        }
     }
 
     function createMarkerIcon(color) {
@@ -227,39 +284,56 @@
             bounds.extend([p.latitude, p.longitude]);
         });
 
-        markerClusterer = L.markerClusterGroup({
-            chunkedLoading: true,
-            maxClusterRadius: 50,
-            spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false,
-            iconCreateFunction: function(cluster) {
-                const count = cluster.getChildCount();
-                let size = count < 10 ? 'small' : count < 50 ? 'medium' : 'large';
-                let dims = { small: 40, medium: 48, large: 56 };
-                let fontSize = { small: 12, medium: 14, large: 16 };
-                return L.divIcon({
-                    html: `<div style="
-                        width:${dims[size]}px;
-                        height:${dims[size]}px;
-                        background:#000;
-                        color:#fff;
-                        border-radius:50%;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        font-weight:700;
-                        font-size:${fontSize[size]}px;
-                        border:3px solid #fff;
-                        box-shadow:0 2px 8px rgba(0,0,0,0.25);
-                    ">${count}</div>`,
-                    className: 'marker-cluster',
-                    iconSize: L.point(dims[size], dims[size]),
-                });
-            },
-        });
-        markerClusterer.addLayer(markerGroup);
-        markerClusterer.addTo(map);
-        map.fitBounds(bounds, { padding: [40, 40] });
+        if (useClustering) {
+            markerClusterer = L.markerClusterGroup({
+                chunkedLoading: true,
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                iconCreateFunction: function(cluster) {
+                    const count = cluster.getChildCount();
+                    let size = count < 10 ? 'small' : count < 50 ? 'medium' : 'large';
+                    let dims = { small: 40, medium: 48, large: 56 };
+                    let fontSize = { small: 12, medium: 14, large: 16 };
+                    return L.divIcon({
+                        html: `<div style="
+                            width:${dims[size]}px;
+                            height:${dims[size]}px;
+                            background:#000;
+                            color:#fff;
+                            border-radius:50%;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            font-weight:700;
+                            font-size:${fontSize[size]}px;
+                            border:3px solid #fff;
+                            box-shadow:0 2px 8px rgba(0,0,0,0.25);
+                        ">${count}</div>`,
+                        className: 'marker-cluster',
+                        iconSize: L.point(dims[size], dims[size]),
+                    });
+                },
+            });
+            markerClusterer.addLayer(markerGroup);
+            markerClusterer.addTo(map);
+        } else {
+            markerGroup.addTo(map);
+            const maxScore = Math.max(0.01, ...POINTS.map(p => p.crime_risk_score || 0));
+            const heatData = POINTS.map(p => [p.latitude, p.longitude, ((p.crime_risk_score || 0) / maxScore)]);
+            heatmapLayer = L.heatLayer(heatData, {
+                radius: 32,
+                blur: 22,
+                maxZoom: 17,
+                max: 1.0,
+                gradient: HEAT_GRADIENT,
+            });
+            heatmapLayer.addTo(map);
+        }
+
+        if (!useClustering) {
+            map.fitBounds(bounds, { padding: [40, 40] });
+        }
     }
 
     document.addEventListener("DOMContentLoaded", function() {
