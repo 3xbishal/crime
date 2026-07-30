@@ -1,0 +1,59 @@
+{% extends "admin_panel/base.html" %}
+{% block title %}Upload CSV &middot; Admin Panel{% endblock %}
+
+{% block content %}
+<h2>Upload Crime Data CSV</h2>
+<p class="text-muted">
+    Upload a CSV file to import crime data. Records are automatically
+    <strong>de-duplicated</strong> by (place, weekday, time-of-day) &mdash;
+    re-uploading the same data will update existing records instead of creating duplicates.
+</p>
+
+<div class="card">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="id_csv_file" class="form-label">CSV File</label>
+            {{ form.csv_file }}
+            <div class="form-text">
+                The CSV should contain columns such as
+                <code>incident_place, incident_weekday, part_of_the_day, latitude, longitude,
+                crime_risk_score, murder_risk, rape_risk, kidnap_risk, bodyfound_risk,
+                robbery_risk, assault_risk, total_crimes, total_murders, total_rapes,
+                total_kidnaps, total_bodyfounds, total_robberys, total_assaults,
+                risk_level, marker_radius, dominant_crime</code>.
+            </div>
+            {% if form.csv_file.errors %}
+                <div class="text-danger mt-2">
+                    {% for e in form.csv_file.errors %}{{ e }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <div class="form-check">
+                {{ form.replace_existing }}
+                <label class="form-check-label" for="id_replace_existing">
+                    {{ form.replace_existing.label }}
+                </label>
+            </div>
+            <div class="form-text">
+                Tick to wipe all existing records before importing this file.
+                Leave unchecked to merge (update duplicates, add new).
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Import CSV</button>
+        <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Current Data</h3>
+    <p>There are currently <strong class="text-accent">{{ total_records }}</strong> crime record(s) in the database.</p>
+    {% if total_records %}
+        <a href="{% url 'admin_panel:data_list' %}" class="btn btn-secondary">View Records</a>
+        <a href="{% url 'admin_panel:data_export' %}" class="btn btn-secondary">Export All</a>
+    {% endif %}
+</div>
+{% endblock %}

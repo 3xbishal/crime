@@ -1,0 +1,43 @@
+{% extends "admin_panel/base.html" %}
+{% block title %}Login &middot; Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card" style="margin-top: 3rem;">
+            <div class="text-center mb-4">
+                <i class="bi bi-shield-lock" style="font-size: 3rem; color: var(--sidebar-active);"></i>
+                <h2 style="margin-top: 0.5rem;">Admin Login</h2>
+                <p class="text-muted">Sign in to access the crime data admin panel.</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">Username</label>
+                    <input type="text" name="username" id="id_username" class="form-control" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="id_password" class="form-label">Password</label>
+                    <input type="password" name="password" id="id_password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    Use a staff account to log in.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

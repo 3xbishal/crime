@@ -1,0 +1,58 @@
+{% extends "crime_map/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Dashboard &middot; Crime Map{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Crime Risk Dashboard</h2>
+    <p class="help">View crime data on an interactive map, predict crime risk at any location, or upload new data.</p>
+
+    <div class="grid cols-3">
+        <div class="stat">
+            <div class="num">{{ total }}</div>
+            <div class="label">Total Records</div>
+        </div>
+        {% for level, _ in by_risk.items %}
+        <div class="stat">
+            <div class="num">{{ by_risk|get_item:level }}</div>
+            <div class="label">{{ level }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>Quick Actions</h3>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'crime_map:map' %}" class="btn">View Crime Map</a>
+        <a href="{% url 'crime_map:predict' %}" class="btn secondary">Predict Crime Risk</a>
+        <a href="{% url 'crime_map:upload_csv' %}" class="btn secondary">Upload CSV</a>
+        <a href="{% url 'admin_panel:login' %}" class="btn secondary">Admin Panel</a>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Risk Level Distribution</h3>
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Risk Level</th>
+                    <th>Count</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for level, _ in by_risk.items %}
+                <tr>
+                    <td><span class="badge {{ level|risk_class }}">{{ level }}</span></td>
+                    <td>{{ by_risk|get_item:level }}</td>
+                    <td>{{ by_risk_pct|get_item:level }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

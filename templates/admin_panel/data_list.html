@@ -1,0 +1,106 @@
+{% extends "admin_panel/base.html" %}
+{% load custom_filters %}
+{% block title %}Data Records &middot; Admin Panel{% endblock %}
+
+{% block content %}
+<h2>Crime Data Records</h2>
+<p class="text-muted">Total: <strong class="text-accent">{{ records.count }}</strong> records</p>
+
+<div class="card">
+    <form method="get" class="row g-3" id="filter-form">
+        <div class="col-md-3">
+            <label class="form-label">Place</label>
+            <input type="text" name="place" class="form-control" value="{{ place }}" placeholder="Search place...">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Risk Level</label>
+            <select name="risk" class="form-control">
+                <option value="">All</option>
+                {% for level, _ in CrimeData.RISK_LEVELS %}
+                <option value="{{ level }}" {% if risk == level %}selected{% endif %}>{{ level }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Weekday</label>
+            <select name="weekday" class="form-control">
+                <option value="">All</option>
+                {% for val, label in WEEKDAYS %}
+                <option value="{{ val }}" {% if weekday == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Part of Day</label>
+            <select name="part" class="form-control">
+                <option value="">All</option>
+                {% for val, label in PART_OF_DAY %}
+                <option value="{{ val }}" {% if part == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+    <div class="mt-3">
+        <button type="submit" form="filter-form" class="btn btn-primary">Filter</button>
+        <a href="{% url 'admin_panel:data_list' %}" class="btn btn-secondary">Reset</a>
+        <a href="{% url 'admin_panel:data_export' %}?{{ request.GET.urlencode }}" class="btn btn-secondary">Export CSV</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-dark-custom table-hover">
+            <thead>
+                <tr>
+                    <th>Place</th>
+                    <th>Weekday</th>
+                    <th>Time</th>
+                    <th>Risk</th>
+                    <th>Score</th>
+                    <th>Dominant Crime</th>
+                    <th>Total Crimes</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>{{ r.incident_place }}</td>
+                    <td>{{ r.incident_weekday|title }}</td>
+                    <td>{{ r.part_of_the_day|title }}</td>
+                    <td><span class="badge {{ r.risk_level|risk_class }}">{{ r.risk_level }}</span></td>
+                    <td>{{ r.crime_risk_score|floatformat:2 }}</td>
+                    <td>{{ r.dominant_crime|default:"—" }}</td>
+                    <td>{{ r.total_crimes }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'admin_panel:data_detail' r.pk %}" class="text-accent"><i class="bi bi-eye"></i></a>
+                        <a href="{% url 'admin_panel:data_edit' r.pk %}" class="text-accent"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'admin_panel:data_delete' r.pk %}" class="text-danger"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted">No records found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if records.has_other_pages %}
+<nav>
+    <ul class="pagination">
+        {% if records.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ records.previous_page_number }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">Previous</a></li>
+        {% endif %}
+        {% for i in records.paginator.page_range %}
+        <li class="page-item {% if records.number == i %}active{% endif %}">
+            <a class="page-link" href="?page={{ i }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">{{ i }}</a>
+        </li>
+        {% endfor %}
+        {% if records.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ records.next_page_number }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">Next</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

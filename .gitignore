@@ -1,0 +1,66 @@
+# Django / Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+pip-wheel-metadata/
+share/python-wheels/
+*.manifest
+*.spec
+
+# Django-specific
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+/media
+
+# Environments
+.env
+.env.local
+.env.*.local
+.venv
+.envrc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+*.sql
+*.sqlite
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Testing
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+.pytest_cache/
+nosetests.xml
+
+# cPanel
+.cpanel/
+.cpanel.yml

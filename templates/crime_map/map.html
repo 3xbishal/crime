@@ -1,0 +1,260 @@
+{% extends "crime_map/base.html" %}
+
+{% block title %}Crime Map &middot; Interactive Map{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map { height: 70vh; width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+    .filter-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
+    .filter-bar .field { margin-bottom: 0; min-width: 140px; flex: 1 1 140px; }
+    .legend { background: var(--panel-2); padding: 0.75rem 1rem; border-radius: 8px; margin-top: 0.75rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .legend .item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+    .legend .swatch { width: 14px; height: 14px; border-radius: 50%; }
+    .map-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+    .api-warning { background: rgba(239,68,68,0.15); border: 1px solid var(--danger); color: #fecaca; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    .leaflet-popup-content { font-family: "Segoe UI", sans-serif; }
+    .leaflet-popup-content table { width: 100%; font-size: 12px; border-collapse: collapse; }
+    .leaflet-popup-content th { text-align: left; color: #94a3b8; }
+    .leaflet-popup-content .badge { font-size: 0.7rem; }
+    .leaflet-popup-content .crime-row { display: flex; justify-content: space-between; padding: 1px 0; }
+    .leaflet-popup-content .crime-row .crime-name { color: #94a3b8; }
+    .leaflet-popup-content .crime-row .crime-val { color: #e2e8f0; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Crime Risk Map</h2>
+
+    {% if google_maps_api_key == "YOUR_GOOGLE_MAPS_API_KEY" %}
+        <div class="api-warning">
+            <strong>Google Maps API key not configured.</strong>
+            The map will use <strong>Leaflet + OpenStreetMap</strong> as a fallback.
+            To use Google Maps, set <code>GOOGLE_MAPS_API_KEY</code> in <code>crime_project/settings.py</code>.
+        </div>
+    {% endif %}
+
+    <form method="get" class="filter-bar">
+        <div class="field">
+            <label>Place</label>
+            {{ form.incident_place }}
+        </div>
+        <div class="field">
+            <label>Risk level</label>
+            {{ form.risk_level }}
+        </div>
+        <div class="field">
+            <label>Dominant crime</label>
+            {{ form.dominant_crime }}
+        </div>
+        <div class="field">
+            <label>Weekday</label>
+            {{ form.incident_weekday }}
+        </div>
+        <div class="field">
+            <label>Part of day</label>
+            {{ form.part_of_the_day }}
+        </div>
+        <div class="field">
+            <label>Min risk score</label>
+            {{ form.min_risk_score }}
+        </div>
+        <div class="field" style="flex: 0 0 auto;">
+            <button type="submit" class="btn">Filter</button>
+            <a class="btn secondary" href="{% url 'crime_map:map' %}">Reset</a>
+        </div>
+    </form>
+
+    <div class="legend">
+        <div class="item"><span class="swatch" style="background:#3b82f6;"></span> Very Low</div>
+        <div class="item"><span class="swatch" style="background:#22c55e;"></span> Low</div>
+        <div class="item"><span class="swatch" style="background:#eab308;"></span> Moderate</div>
+        <div class="item"><span class="swatch" style="background:#f97316;"></span> High</div>
+        <div class="item"><span class="swatch" style="background:#ef4444;"></span> Very High</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="map-info">
+        <div>
+            Showing <strong>{{ shown_count }}</strong> of <strong>{{ total_count }}</strong> records.
+            {% if shown_count == 0 %}
+                <span class="help">No data matches the current filters{% if total_count == 0 %} &mdash; upload a CSV first{% endif %}.</span>
+            {% endif %}
+        </div>
+        <div>
+            <button class="btn secondary" id="toggle-heatmap">Heatmap</button>
+            <button class="btn secondary" id="toggle-clustering">Clustering</button>
+            <a href="{% url 'crime_map:predict' %}" class="btn">Predict Crime</a>
+        </div>
+    </div>
+
+    <div id="map"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ points|json_script:"crime-points-data" }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.9.3/dist/leaflet-heat.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<script>
+    const POINTS = JSON.parse(document.getElementById("crime-points-data").textContent);
+    const API_KEY = "{{ google_maps_api_key }}";
+
+    const RISK_COLORS = {
+        "Very Low": "#3b82f6",
+        "Low": "#22c55e",
+        "Moderate": "#eab308",
+        "High": "#f97316",
+        "Very High": "#ef4444",
+    };
+
+    function riskClass(level) {
+        return (level || "").toLowerCase().replace(/\s+/g, "-");
+    }
+
+    function buildInfoContent(p) {
+        const crimeRows = [
+            ["Murder", p.total_murders, p.murder_risk],
+            ["Rape", p.total_rapes, p.rape_risk],
+            ["Kidnap", p.total_kidnaps, p.kidnap_risk],
+            ["Body found", p.total_bodyfounds, p.bodyfound_risk],
+            ["Robbery", p.total_robberys, p.robbery_risk],
+            ["Assault", p.total_assaults, p.assault_risk],
+        ];
+        const rows = crimeRows.map(([name, count, risk]) =>
+            `<div class="crime-row"><span class="crime-name">${name}</span><span class="crime-val">${count} (${(risk * 100).toFixed(1)}%)</span></div>`
+        ).join("");
+        return `
+            <div style="min-width:220px; font-family:Segoe UI, sans-serif;">
+                <strong>${p.incident_place}</strong><br>
+                <span style="color:#64748b;">${p.incident_weekday} &middot; ${p.part_of_the_day}</span><br>
+                <span class="badge ${riskClass(p.risk_level)}" style="margin-top:4px;">${p.risk_level}</span>
+                <span style="margin-left:6px; color:#64748b;">dominant: ${p.dominant_crime.replace("_risk","")}</span>
+                <hr style="margin:8px 0; border-color:#e2e8f0;">
+                ${rows}
+                <div style="margin-top:6px; color:#64748b;">
+                    Total crimes: <strong>${p.total_crimes}</strong> &middot;
+                    Score: <strong>${(p.crime_risk_score * 100).toFixed(1)}%</strong>
+                </div>
+            </div>`;
+    }
+
+    let map, markers = [], circles = [], heatmapLayer = null, useHeatmap = false, useClustering = false;
+    let markerClusterer = null;
+
+    function initMap() {
+        const center = POINTS.length
+            ? { lat: POINTS[0].latitude, lng: POINTS[0].longitude }
+            : { lat: 23.685, lng: 90.3563 }; // Bangladesh centroid
+
+        map = L.map('map').setView([center.lat, center.lng], POINTS.length ? 8 : 7);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 18,
+        }).addTo(map);
+
+        renderPoints();
+
+        document.getElementById("toggle-heatmap").addEventListener("click", () => {
+            useHeatmap = !useHeatmap;
+            renderPoints();
+        });
+        document.getElementById("toggle-clustering").addEventListener("click", () => {
+            useClustering = !useClustering;
+            renderPoints();
+        });
+    }
+
+    function clearOverlays() {
+        if (markerClusterer) {
+            markerClusterer.clearLayers();
+            markerClusterer = null;
+        }
+        markers.forEach(m => map.removeLayer(m));
+        circles.forEach(c => map.removeLayer(c));
+        markers = [];
+        circles = [];
+        if (heatmapLayer) {
+            map.removeLayer(heatmapLayer);
+            heatmapLayer = null;
+        }
+    }
+
+    function renderPoints() {
+        clearOverlays();
+        if (!POINTS.length) return;
+
+        if (useHeatmap) {
+            const heatData = POINTS.map(p => [p.latitude, p.longitude, Math.max(0.1, p.crime_risk_score * 10)]);
+            heatmapLayer = L.heatLayer(heatData, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 17,
+                gradient: { 0.2: '#3b82f6', 0.4: '#22c55e', 0.6: '#eab308', 0.8: '#f97316', 1.0: '#ef4444' },
+            });
+            heatmapLayer.addTo(map);
+            return;
+        }
+
+        const bounds = L.latLngBounds([]);
+
+        if (useClustering) {
+            markerClusterer = L.markerClusterGroup();
+        }
+
+        POINTS.forEach(p => {
+            const color = RISK_COLORS[p.risk_level] || "#64748b";
+            const radius = Math.max(50, (p.marker_radius || 7) * 120);
+
+            // Crime "range" circle
+            const circle = L.circle([p.latitude, p.longitude], {
+                color: color,
+                weight: 1,
+                fillColor: color,
+                fillOpacity: 0.25,
+                radius: radius,
+            });
+            circle.addTo(map);
+            circles.push(circle);
+
+            const marker = L.circleMarker([p.latitude, p.longitude], {
+                radius: 6,
+                fillColor: color,
+                color: "#0f172a",
+                weight: 1,
+                fillOpacity: 1,
+            });
+            marker.bindPopup(buildInfoContent(p));
+            marker.addTo(map);
+            markers.push(marker);
+
+            bounds.extend([p.latitude, p.longitude]);
+
+            if (useClustering && markerClusterer) {
+                markerClusterer.addLayer(marker);
+            }
+        });
+
+        if (useClustering && markerClusterer) {
+            markerClusterer.addTo(map);
+        }
+
+        if (!useClustering) {
+            map.fitBounds(bounds);
+        }
+    }
+
+    // Initialize map when the page loads
+    document.addEventListener("DOMContentLoaded", function() {
+        if (typeof L !== 'undefined') {
+            initMap();
+        }
+    });
+</script>
+{% endblock %}
