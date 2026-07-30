@@ -11,12 +11,13 @@
             --bg: #0f172a;
             --panel: #1e293b;
             --panel-2: #273449;
-            --text: #e2e8f0;
-            --muted: #94a3b8;
+            --text: #f1f5f9;
+            --muted: #cbd5e1;
             --accent: #38bdf8;
             --danger: #ef4444;
             --success: #22c55e;
-            --border: #334155;
+            --warning: #f59e0b;
+            --border: #475569;
         }
         * { box-sizing: border-box; }
         body {
@@ -24,6 +25,7 @@
             font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
             background: var(--bg);
             color: var(--text);
+            line-height: 1.6;
         }
         header.navbar {
             background: var(--panel);
@@ -46,68 +48,95 @@
             margin-right: 1rem;
             padding: 0.35rem 0.6rem;
             border-radius: 6px;
+            font-size: 0.95rem;
         }
         header.navbar nav a:hover { background: var(--panel-2); }
-        header.navbar nav a.active { background: var(--accent); color: #0f172a; }
-        .container { padding: 1.25rem; }
+        header.navbar nav a.active { background: var(--accent); color: #0f172a; font-weight: 600; }
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 1.25rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .mobile-toggle { display: inline-flex; align-items: center; justify-content: center; }
+            header.navbar nav { width: 100%; display: none; }
+            header.navbar nav.open { display: flex; flex-direction: column; gap: 0.25rem; }
+            header.navbar nav a { margin-right: 0; }
+        }
+        .container { padding: 1.25rem; max-width: 1400px; margin: 0 auto; }
         .card {
             background: var(--panel);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1.25rem;
-            margin-bottom: 1.25rem;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
         }
-        .card h2 { margin-top: 0; }
-        .card h3 { color: var(--accent); }
+        .card h2 { margin-top: 0; font-size: 1.5rem; font-weight: 600; }
+        .card h3 { color: var(--accent); margin-top: 0; font-size: 1.1rem; font-weight: 600; }
         .grid { display: grid; gap: 1.25rem; }
         .grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
         .stat {
             background: var(--panel-2);
-            border-radius: 10px;
-            padding: 1rem;
+            border-radius: 12px;
+            padding: 1.25rem;
             text-align: center;
+            border: 1px solid var(--border);
         }
-        .stat .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
-        .stat .label { color: var(--muted); font-size: 0.85rem; }
+        .stat .num { font-size: 2rem; font-weight: 700; color: var(--accent); }
+        .stat .label { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
         .btn {
             background: var(--accent);
             color: #0f172a;
             border: none;
-            padding: 0.55rem 1.1rem;
-            border-radius: 6px;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
         }
-        .btn:hover { filter: brightness(1.1); }
+        .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
         .btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
         .btn.secondary:hover { background: #334155; }
         .btn.danger { background: var(--danger); color: #fff; }
-        .btn.danger:hover { filter: brightness(1.1); }
-        form .field { margin-bottom: 0.9rem; }
-        form label { display: block; margin-bottom: 0.3rem; color: var(--muted); font-size: 0.9rem; }
+        .btn.danger:hover { filter: brightness(1.15); }
+        form .field { margin-bottom: 1rem; }
+        form label { display: block; margin-bottom: 0.4rem; color: var(--muted); font-size: 0.9rem; font-weight: 500; }
         input[type="text"], input[type="number"], input[type="file"], select, textarea {
             width: 100%;
-            padding: 0.5rem;
+            padding: 0.6rem;
             background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 8px;
             color: var(--text);
+            font-size: 0.95rem;
         }
-        .messages { list-style: none; padding: 0; margin: 0 0 1rem; }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+        .messages { list-style: none; padding: 0; margin: 0 0 1.25rem; }
         .messages li {
-            padding: 0.7rem 1rem;
-            border-radius: 6px;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
             margin-bottom: 0.5rem;
         }
-        .messages li.success { background: rgba(34,197,94,0.15); border: 1px solid var(--success); }
-        .messages li.error { background: rgba(239,68,68,0.15); border: 1px solid var(--danger); }
-        .messages li.info { background: rgba(56,189,248,0.15); border: 1px solid var(--accent); }
-        .help { color: var(--muted); font-size: 0.8rem; }
+        .messages li.success { background: rgba(34,197,94,0.15); border: 1px solid var(--success); color: #bbf7d0; }
+        .messages li.error { background: rgba(239,68,68,0.15); border: 1px solid var(--danger); color: #fecaca; }
+        .messages li.info { background: rgba(56,189,248,0.15); border: 1px solid var(--accent); color: #bfdbfe; }
+        .help { color: var(--muted); font-size: 0.85rem; }
         .badge {
             display: inline-block;
-            padding: 0.15rem 0.5rem;
+            padding: 0.25rem 0.6rem;
             border-radius: 999px;
             font-size: 0.75rem;
             font-weight: 600;
@@ -120,22 +149,54 @@
         footer {
             text-align: center;
             color: var(--muted);
-            padding: 1rem;
-            font-size: 0.8rem;
+            padding: 1.25rem;
+            font-size: 0.9rem;
         }
-        .table-sm td, .table-sm th { padding: 0.4rem 0.5rem; }
+        .table-sm td, .table-sm th { padding: 0.5rem 0.6rem; }
         .table-sm tbody tr { border-bottom: 1px solid var(--border); }
+        .table-dark-custom th { background: #334155; color: var(--text); font-weight: 600; }
+        .table-dark-custom td { border-color: var(--border); color: var(--text); }
+        .table-dark-custom tbody tr:hover { background: rgba(56, 189, 248, 0.08); }
+        .text-accent { color: var(--accent); }
+        .text-danger { color: var(--danger); }
+        .text-muted { color: var(--muted) !important; }
+        .filter-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
+        .filter-bar .field { margin-bottom: 0; min-width: 140px; flex: 1 1 140px; }
+        .legend { background: var(--panel-2); padding: 0.75rem 1rem; border-radius: 8px; margin-top: 0.75rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+        .legend .item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text); }
+        .legend .swatch { width: 14px; height: 14px; border-radius: 50%; }
+        .map-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+        .api-warning { background: rgba(239,68,68,0.15); border: 1px solid var(--danger); color: #fecaca; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .leaflet-popup-content { font-family: "Segoe UI", sans-serif; }
+        .leaflet-popup-content table { width: 100%; font-size: 12px; border-collapse: collapse; }
+        .leaflet-popup-content th { text-align: left; color: #94a3b8; }
+        .leaflet-popup-content .badge { font-size: 0.7rem; }
+        .leaflet-popup-content .crime-row { display: flex; justify-content: space-between; padding: 1px 0; }
+        .leaflet-popup-content .crime-row .crime-name { color: #94a3b8; }
+        .leaflet-popup-content .crime-row .crime-val { color: #e2e8f0; font-weight: 600; }
+        #map { height: 70vh; width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+        .result-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-top: 1.25rem; }
+        .result-card .score-num { font-size: 2.5rem; font-weight: 700; }
+        .risk-badge { font-size: 1.1rem; padding: 0.4rem 0.8rem; }
+        .neighbor-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); color: var(--text); }
+        .neighbor-item:last-child { border-bottom: none; }
+        .neighbor-item .help { color: var(--muted); }
+        .crime-bar { height: 20px; border-radius: 4px; background: var(--border); overflow: hidden; margin-top: 0.35rem; }
+        .crime-bar-fill { height: 100%; border-radius: 4px; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     <header class="navbar">
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
+            <i class="bi bi-list"></i>
+        </button>
         <a class="brand" href="{% url 'crime_map:dashboard' %}">Crime Map BD</a>
-        <nav>
+        <nav id="mainNav">
             <a href="{% url 'crime_map:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
             <a href="{% url 'crime_map:map' %}" class="{% if request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a>
+            <a href="{% url 'crime_map:public_data_list' %}" class="{% if request.resolver_match.url_name == 'public_data_list' %}active{% endif %}">Crime Records</a>
             <a href="{% url 'crime_map:predict' %}" class="{% if request.resolver_match.url_name == 'predict' %}active{% endif %}">Predict Crime</a>
-            <a href="{% url 'crime_map:upload_csv' %}" class="{% if request.resolver_match.url_name == 'upload_csv' %}active{% endif %}">Upload CSV</a>
             <a href="{% url 'admin_panel:login' %}">Admin</a>
         </nav>
     </header>
@@ -152,9 +213,19 @@
         {% block content %}{% endblock %}
     </div>
 
-    <footer>Crime Map &middot; Django + Maps &middot; CSV-driven</footer>
+    <footer>Crime Map &middot; Leaflet + OpenStreetMap &middot; CSV-driven</footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        (function() {
+            var toggle = document.getElementById('mobileToggle');
+            var nav = document.getElementById('mainNav');
+            if (!toggle || !nav) return;
+            toggle.addEventListener('click', function() {
+                nav.classList.toggle('open');
+            });
+        })();
+    </script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

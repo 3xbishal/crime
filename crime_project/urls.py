@@ -11,7 +11,7 @@ from django.urls import include, path
 
 urlpatterns = [
     # Custom admin panel (NOT Django's built-in admin)
-    path("admin-panel/", include("crime_map.admin_urls", namespace="admin_panel")),
+    path("admin/", include("crime_map.admin_urls", namespace="admin_panel")),
     # Visitor-facing app
     path("", include("crime_map.urls")),
 ]

@@ -130,8 +130,6 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "YOUR_GOOGLE_MAPS_API_KEY")
-
 LOGIN_URL = "admin_panel:login"
 LOGIN_REDIRECT_URL = "admin_panel:dashboard"
 LOGOUT_REDIRECT_URL = "admin_panel:login"

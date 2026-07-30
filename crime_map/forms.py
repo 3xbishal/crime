@@ -61,6 +61,8 @@ class CrimeFilterForm(forms.Form):
     incident_weekday = forms.ChoiceField(choices=WEEKDAYS, required=False)
     part_of_the_day = forms.ChoiceField(choices=PART_OF_DAY, required=False)
     min_risk_score = forms.FloatField(required=False, min_value=0.0, max_value=1.0)
+    start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}))
+    end_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}))
 
 
 class CrimeDataForm(forms.ModelForm):

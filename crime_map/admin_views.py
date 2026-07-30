@@ -6,6 +6,7 @@ Provides:
   * CSV upload with automatic deduplication
   * Data listing, detail, edit, delete
   * CSV export
+  * PDF report export
   * Upload history
 """
 
@@ -20,6 +21,7 @@ from django.db import transaction
 from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import get_template
 from django.views.decorators.http import require_http_methods
 
 from .forms import CSVUploadForm, CrimeDataForm, CrimeFilterForm
@@ -27,6 +29,11 @@ from .models import CrimeData, CSVUpload
 
 # Re-use the column-mapping helpers from views.py
 from .views import COLUMN_MAP, INT_FIELDS, FLOAT_FIELDS, _coerce
+
+try:
+    from xhtml2pdf import pisa
+except ImportError:
+    pisa = None
 
 
 # ---------------------------------------------------------------------------
@@ -340,6 +347,59 @@ def admin_data_export(request):
             obj.risk_level, obj.marker_radius, obj.dominant_crime,
         ])
 
+    return response
+
+
+@admin_required
+def admin_data_export_pdf(request):
+    """Export filtered crime records as a PDF report."""
+    if pisa is None:
+        messages.error(request, "PDF export is not available. Please install xhtml2pdf.")
+        return redirect("admin_panel:data_list")
+
+    qs = CrimeData.objects.all()
+    place = request.GET.get("place", "")
+    risk = request.GET.get("risk", "")
+    weekday = request.GET.get("weekday", "")
+    part = request.GET.get("part", "")
+
+    if place:
+        qs = qs.filter(incident_place__icontains=place)
+    if risk:
+        qs = qs.filter(risk_level=risk)
+    if weekday:
+        qs = qs.filter(incident_weekday=weekday)
+    if part:
+        qs = qs.filter(part_of_the_day=part)
+
+    qs = qs.order_by("-uploaded_at", "incident_place")
+    records = list(qs[:500])
+
+    by_risk = {}
+    for level, _ in CrimeData.RISK_LEVELS:
+        by_risk[level] = qs.filter(risk_level=level).count()
+
+    total = qs.count()
+    now = datetime.now()
+
+    template = get_template("admin_panel/report_pdf.html")
+    html = template.render({
+        "records": records,
+        "total": total,
+        "by_risk": by_risk,
+        "place": place,
+        "risk": risk,
+        "weekday": weekday,
+        "part": part,
+        "generated_at": now,
+        "request": request,
+    })
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="crime_report_{now.strftime("%Y%m%d_%H%M%S")}.pdf"'
+    )
+    pisa.CreatePDF(html, dest=response)
     return response
 
 

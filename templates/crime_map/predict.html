@@ -6,34 +6,35 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-    #predict-map { height: 400px; width: 100%; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 1rem; }
-    .result-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-top: 1rem; }
+    #predict-map { height: 420px; width: 100%; border-radius: 10px; border: 1px solid var(--border); margin-top: 1rem; }
+    .result-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-top: 1.25rem; }
     .result-card .score-num { font-size: 2.5rem; font-weight: 700; }
     .risk-badge { font-size: 1.1rem; padding: 0.4rem 0.8rem; }
-    .neighbor-item { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
+    .neighbor-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
     .neighbor-item:last-child { border-bottom: none; }
-    .crime-bar { height: 20px; border-radius: 4px; background: var(--border); overflow: hidden; margin-top: 0.2rem; }
+    .crime-bar { height: 20px; border-radius: 4px; background: var(--border); overflow: hidden; margin-top: 0.35rem; }
     .crime-bar-fill { height: 100%; border-radius: 4px; }
+    @media (max-width: 768px) {
+        #predict-map { height: 320px; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card">
+<div class="page-header">
     <h2>Predict Crime Risk</h2>
-    <p class="help">
-        Enter a location (latitude/longitude), select a weekday and time of day,
-        and our system will predict the crime risk using a <strong>k-nearest-neighbors</strong>
-        algorithm based on your uploaded data.
-    </p>
+    <p class="text-muted mb-0">Enter a location and time to predict crime risk using k-nearest-neighbors from your uploaded data.</p>
+</div>
 
-    {% if total_records == 0 %}
-        <div class="api-warning" style="background: rgba(239,68,68,0.15); border: 1px solid var(--danger); color: #fecaca; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem;">
-            <strong>No data available.</strong> Please upload a CSV file first to enable predictions.
-        </div>
-    {% endif %}
+{% if total_records == 0 %}
+    <div class="alert alert-danger">
+        <strong>No data available.</strong> Please ask an admin to upload a CSV file first.
+    </div>
+{% endif %}
 
+<div class="card">
     <form method="get" id="predict-form">
-        <div class="row">
+        <div class="row g-3">
             <div class="col-md-6">
                 <div class="mb-3">
                     <label class="form-label">Latitude</label>
@@ -62,12 +63,16 @@
                 </div>
             </div>
         </div>
-        <button type="submit" class="btn" {% if total_records == 0 %}disabled{% endif %}>Predict Crime Risk</button>
-        <a href="{% url 'crime_map:predict' %}" class="btn secondary">Reset</a>
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn" {% if total_records == 0 %}disabled{% endif %}>
+                <i class="bi bi-graph-up-arrow"></i> Predict Crime Risk
+            </button>
+            <a href="{% url 'crime_map:predict' %}" class="btn secondary">Reset</a>
+        </div>
     </form>
-
-    <div id="predict-map"></div>
 </div>
+
+<div class="card" id="predict-map"></div>
 
 {% if prediction %}
 <div class="result-card">
@@ -75,7 +80,7 @@
     {% if prediction.error %}
         <div class="help" style="color: var(--danger);">{{ prediction.error }}</div>
     {% else %}
-        <div class="row">
+        <div class="row g-3">
             <div class="col-md-4 text-center">
                 <div class="score-num" style="color:
                     {% if prediction.predicted_risk_level == 'Very High' %}#ef4444

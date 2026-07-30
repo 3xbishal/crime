@@ -4,10 +4,10 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-5 col-lg-4">
-        <div class="card" style="margin-top: 3rem;">
+        <div class="card" style="margin-top: 4rem;">
             <div class="text-center mb-4">
                 <i class="bi bi-shield-lock" style="font-size: 3rem; color: var(--sidebar-active);"></i>
-                <h2 style="margin-top: 0.5rem;">Admin Login</h2>
+                <h2 style="margin-top: 0.75rem; color: var(--sidebar-active);">Admin Login</h2>
                 <p class="text-muted">Sign in to access the crime data admin panel.</p>
             </div>
 
@@ -23,11 +23,11 @@
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="id_username" class="form-label">Username</label>
-                    <input type="text" name="username" id="id_username" class="form-control" required autofocus>
+                    <input type="text" name="username" id="id_username" class="form-control" required autofocus autocomplete="username">
                 </div>
                 <div class="mb-3">
                     <label for="id_password" class="form-label">Password</label>
-                    <input type="password" name="password" id="id_password" class="form-control" required>
+                    <input type="password" name="password" id="id_password" class="form-control" required autocomplete="current-password">
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Login</button>
             </form>

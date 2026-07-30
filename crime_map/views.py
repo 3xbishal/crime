@@ -1,14 +1,12 @@
-import csv
-import io
 import math
+from datetime import date
 
 from django.conf import settings
-from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_http_methods
 
-from .forms import CrimeFilterForm, CSVUploadForm, PredictionForm
+from .forms import CrimeFilterForm, PredictionForm
 from .models import CrimeData
 
 # ---------------------------------------------------------------------------
@@ -86,73 +84,6 @@ def _coerce(field_name, raw_value):
     return value
 
 
-def import_csv_file(csv_file, replace_existing=False):
-    """Parse an uploaded CSV file and create CrimeData records.
-
-    Deduplication is performed by the natural key
-    (incident_place, incident_weekday, part_of_the_day).  If a row with the
-    same key already exists the existing record is updated instead of
-    creating a duplicate.
-
-    Returns the number of records successfully imported (new + updated).
-    """
-    decoded = csv_file.read().decode("utf-8-sig", errors="replace")
-    reader = csv.DictReader(io.StringIO(decoded))
-
-    # Normalise the header names so we can match them against COLUMN_MAP.
-    original_fields = reader.fieldnames or []
-    reader.fieldnames = [f.strip().lower().replace(" ", "_") for f in original_fields]
-
-    if replace_existing:
-        CrimeData.objects.all().delete()
-
-    # Build a lookup of existing records keyed by (place, weekday, part_of_day)
-    existing = {}
-    if not replace_existing:
-        for obj in CrimeData.objects.all():
-            existing[(obj.incident_place, obj.incident_weekday, obj.part_of_the_day)] = obj
-
-    records_to_create = []
-    records_to_update = []
-
-    for row in reader:
-        kwargs = {}
-        for csv_col, model_field in COLUMN_MAP.items():
-            raw = row.get(csv_col)
-            if raw is None:
-                continue
-            kwargs[model_field] = _coerce(model_field, raw)
-
-        # Require at least a latitude/longitude to be useful on the map.
-        if kwargs.get("latitude") is None or kwargs.get("longitude") is None:
-            continue
-
-        key = (
-            kwargs.get("incident_place", ""),
-            kwargs.get("incident_weekday", ""),
-            kwargs.get("part_of_the_day", ""),
-        )
-
-        if key in existing:
-            obj = existing[key]
-            for field, value in kwargs.items():
-                setattr(obj, field, value)
-            records_to_update.append(obj)
-        else:
-            records_to_create.append(CrimeData(**kwargs))
-
-    if records_to_create:
-        CrimeData.objects.bulk_create(records_to_create, batch_size=500)
-    if records_to_update:
-        CrimeData.objects.bulk_update(
-            records_to_update,
-            [f for f in COLUMN_MAP.values() if f != "incident_place"],
-            batch_size=500,
-        )
-
-    return len(records_to_create) + len(records_to_update)
-
-
 # ---------------------------------------------------------------------------
 # Views
 # ---------------------------------------------------------------------------
@@ -161,6 +92,10 @@ def apply_filters(queryset, form):
     """Apply cleaned filter-form values to a CrimeData queryset."""
     if form.is_valid():
         cd = form.cleaned_data
+        if cd.get("start_date"):
+            queryset = queryset.filter(uploaded_at__date__gte=cd["start_date"])
+        if cd.get("end_date"):
+            queryset = queryset.filter(uploaded_at__date__lte=cd["end_date"])
         if cd.get("incident_place"):
             queryset = queryset.filter(incident_place__icontains=cd["incident_place"])
         if cd.get("risk_level"):
@@ -176,33 +111,9 @@ def apply_filters(queryset, form):
     return queryset
 
 
-@require_http_methods(["GET", "POST"])
-def upload_csv(request):
-    """Upload a CSV file and import its rows into the database."""
-    if request.method == "POST":
-        form = CSVUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            csv_file = form.cleaned_data["csv_file"]
-            replace = form.cleaned_data.get("replace_existing", False)
-            try:
-                count = import_csv_file(csv_file, replace_existing=replace)
-                messages.success(request, f"Successfully imported {count} record(s).")
-            except Exception as exc:  # noqa: BLE001 - surface any parse error to user
-                messages.error(request, f"Failed to import CSV: {exc}")
-            return redirect("crime_map:upload_csv")
-    else:
-        form = CSVUploadForm()
-
-    total_records = CrimeData.objects.count()
-    return render(
-        request,
-        "crime_map/upload_csv.html",
-        {"form": form, "total_records": total_records},
-    )
-
 
 def crime_map_view(request):
-    """Render the Google Map with crime markers and filtering controls."""
+    """Render the Leaflet + OpenStreetMap crime markers."""
     form = CrimeFilterForm(request.GET or None)
     queryset = CrimeData.objects.all()
     queryset = apply_filters(queryset, form)
@@ -234,7 +145,6 @@ def crime_map_view(request):
         {
             "form": form,
             "points": list(points),
-            "google_maps_api_key": settings.GOOGLE_MAPS_API_KEY,
             "shown_count": len(points),
             "total_count": CrimeData.objects.count(),
         },
@@ -474,3 +384,21 @@ def predict_api(request):
         k=form.cleaned_data.get("k_neighbors", 5),
     )
     return JsonResponse(prediction)
+
+
+def public_data_list(request):
+    """Public crime records list with filtering and date range."""
+    form = CrimeFilterForm(request.GET or None)
+    queryset = CrimeData.objects.all()
+    queryset = apply_filters(queryset, form)
+    queryset = queryset.order_by("-uploaded_at", "incident_place")
+
+    paginator = Paginator(queryset, 25)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(request, "crime_map/public_data_list.html", {
+        "form": form,
+        "records": page_obj,
+        "total_count": queryset.count(),
+        "shown_count": len(page_obj.object_list),
+    })

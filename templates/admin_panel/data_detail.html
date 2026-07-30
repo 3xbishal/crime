@@ -3,14 +3,26 @@
 {% block title %}Record #{{ record.pk }} &middot; Admin Panel{% endblock %}
 
 {% block content %}
-<h2>Record Details</h2>
-<p class="text-muted">ID: {{ record.pk }} &middot; Uploaded: {{ record.uploaded_at|date:"M d, Y H:i" }}</p>
+<div class="page-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <div>
+        <h2>Record Details</h2>
+        <p class="text-muted mb-0">ID: {{ record.pk }} &middot; Uploaded: {{ record.uploaded_at|date:"M d, Y H:i" }}</p>
+    </div>
+    <div class="action-bar">
+        <a href="{% url 'admin_panel:data_edit' record.pk %}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Edit Record
+        </a>
+        <a href="{% url 'admin_panel:data_delete' record.pk %}" class="btn btn-danger">
+            <i class="bi bi-trash"></i> Delete Record
+        </a>
+    </div>
+</div>
 
-<div class="card">
-    <div class="row">
-        <div class="col-md-6">
-            <h3>Location & Time</h3>
-            <table class="table table-dark-custom">
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <h3>Location &amp; Time</h3>
+            <table class="table table-dark-custom mb-0">
                 <tr><th>Place</th><td>{{ record.incident_place }}</td></tr>
                 <tr><th>Weekday</th><td>{{ record.incident_weekday|title }}</td></tr>
                 <tr><th>Part of Day</th><td>{{ record.part_of_the_day|title }}</td></tr>
@@ -18,9 +30,11 @@
                 <tr><th>Longitude</th><td>{{ record.longitude }}</td></tr>
             </table>
         </div>
-        <div class="col-md-6">
+    </div>
+    <div class="col-md-6">
+        <div class="card">
             <h3>Risk Assessment</h3>
-            <table class="table table-dark-custom">
+            <table class="table table-dark-custom mb-0">
                 <tr><th>Risk Level</th><td><span class="badge {{ record.risk_level|risk_class }}">{{ record.risk_level }}</span></td></tr>
                 <tr><th>Crime Risk Score</th><td>{{ record.crime_risk_score|floatformat:4 }}</td></tr>
                 <tr><th>Dominant Crime</th><td>{{ record.dominant_crime|default:"—" }}</td></tr>
@@ -32,9 +46,9 @@
 
 <div class="card">
     <h3>Risk Breakdown by Crime Type</h3>
-    <div class="row">
+    <div class="row g-3">
         <div class="col-md-6">
-            <table class="table table-dark-custom">
+            <table class="table table-dark-custom mb-0">
                 <thead><tr><th>Crime Type</th><th>Risk</th><th>Total</th></tr></thead>
                 <tbody>
                     <tr><td>Murder</td><td>{{ record.murder_risk|floatformat:4 }}</td><td>{{ record.total_murders }}</td></tr>
@@ -48,7 +62,7 @@
         </div>
         <div class="col-md-6">
             <h4>Totals</h4>
-            <table class="table table-dark-custom">
+            <table class="table table-dark-custom mb-0">
                 <tr><th>Total Crimes</th><td>{{ record.total_crimes }}</td></tr>
                 <tr><th>Total Murders</th><td>{{ record.total_murders }}</td></tr>
                 <tr><th>Total Rapes</th><td>{{ record.total_rapes }}</td></tr>
@@ -61,9 +75,9 @@
     </div>
 </div>
 
-<div class="d-flex gap-2 mt-3">
-    <a href="{% url 'admin_panel:data_edit' record.pk %}" class="btn btn-primary">Edit Record</a>
-    <a href="{% url 'admin_panel:data_delete' record.pk %}" class="btn btn-danger">Delete Record</a>
-    <a href="{% url 'admin_panel:data_list' %}" class="btn btn-secondary">Back to List</a>
+<div class="action-bar mt-3">
+    <a href="{% url 'admin_panel:data_list' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+    </a>
 </div>
 {% endblock %}

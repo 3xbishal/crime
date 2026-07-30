@@ -3,8 +3,20 @@
 {% block title %}Data Records &middot; Admin Panel{% endblock %}
 
 {% block content %}
-<h2>Crime Data Records</h2>
-<p class="text-muted">Total: <strong class="text-accent">{{ records.count }}</strong> records</p>
+<div class="page-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <div>
+        <h2>Crime Data Records</h2>
+        <p class="text-muted mb-0">Total: <strong class="text-accent">{{ records.count }}</strong> records</p>
+    </div>
+    <div class="action-bar">
+        <a href="{% url 'admin_panel:data_export' %}?{{ request.GET.urlencode }}" class="btn btn-secondary">
+            <i class="bi bi-download"></i> Export CSV
+        </a>
+        <a href="{% url 'admin_panel:data_export_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-primary">
+            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+        </a>
+    </div>
+</div>
 
 <div class="card">
     <form method="get" class="row g-3" id="filter-form">
@@ -39,17 +51,18 @@
                 {% endfor %}
             </select>
         </div>
+        <div class="col-12">
+            <button type="submit" form="filter-form" class="btn btn-primary">
+                <i class="bi bi-funnel"></i> Filter
+            </button>
+            <a href="{% url 'admin_panel:data_list' %}" class="btn btn-secondary">Reset</a>
+        </div>
     </form>
-    <div class="mt-3">
-        <button type="submit" form="filter-form" class="btn btn-primary">Filter</button>
-        <a href="{% url 'admin_panel:data_list' %}" class="btn btn-secondary">Reset</a>
-        <a href="{% url 'admin_panel:data_export' %}?{{ request.GET.urlencode }}" class="btn btn-secondary">Export CSV</a>
-    </div>
 </div>
 
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-dark-custom table-hover">
+        <table class="table table-dark-custom table-hover align-middle">
             <thead>
                 <tr>
                     <th>Place</th>
@@ -58,7 +71,7 @@
                     <th>Risk</th>
                     <th>Score</th>
                     <th>Dominant Crime</th>
-                    <th>Total Crimes</th>
+                    <th>Total</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
@@ -73,13 +86,15 @@
                     <td>{{ r.dominant_crime|default:"—" }}</td>
                     <td>{{ r.total_crimes }}</td>
                     <td class="text-end">
-                        <a href="{% url 'admin_panel:data_detail' r.pk %}" class="text-accent"><i class="bi bi-eye"></i></a>
-                        <a href="{% url 'admin_panel:data_edit' r.pk %}" class="text-accent"><i class="bi bi-pencil"></i></a>
-                        <a href="{% url 'admin_panel:data_delete' r.pk %}" class="text-danger"><i class="bi bi-trash"></i></a>
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'admin_panel:data_detail' r.pk %}" class="text-accent" title="View"><i class="bi bi-eye"></i></a>
+                            <a href="{% url 'admin_panel:data_edit' r.pk %}" class="text-accent" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <a href="{% url 'admin_panel:data_delete' r.pk %}" class="text-danger" title="Delete"><i class="bi bi-trash"></i></a>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-muted">No records found.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -87,10 +102,12 @@
 </div>
 
 {% if records.has_other_pages %}
-<nav>
+<nav aria-label="Page navigation">
     <ul class="pagination">
         {% if records.has_previous %}
-        <li class="page-item"><a class="page-link" href="?page={{ records.previous_page_number }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">Previous</a></li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ records.previous_page_number }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">Previous</a>
+        </li>
         {% endif %}
         {% for i in records.paginator.page_range %}
         <li class="page-item {% if records.number == i %}active{% endif %}">
@@ -98,7 +115,9 @@
         </li>
         {% endfor %}
         {% if records.has_next %}
-        <li class="page-item"><a class="page-link" href="?page={{ records.next_page_number }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">Next</a></li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ records.next_page_number }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">Next</a>
+        </li>
         {% endif %}
     </ul>
 </nav>

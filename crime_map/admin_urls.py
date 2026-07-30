@@ -16,5 +16,6 @@ urlpatterns = [
     path("data/<int:pk>/edit/", admin_views.admin_data_edit, name="data_edit"),
     path("data/<int:pk>/delete/", admin_views.admin_data_delete, name="data_delete"),
     path("data/export/", admin_views.admin_data_export, name="data_export"),
+    path("data/export/pdf/", admin_views.admin_data_export_pdf, name="data_export_pdf"),
     path("uploads/", admin_views.admin_upload_list, name="upload_list"),
 ]
