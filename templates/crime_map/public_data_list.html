@@ -99,7 +99,13 @@
                     <td>{{ r.uploaded_at|date:"Y-m-d" }}</td>
                     <td>{{ r.incident_weekday|title }}</td>
                     <td>{{ r.part_of_the_day|title }}</td>
-                    <td><span class="badge {{ r.risk_level|risk_class }}">{{ r.risk_level }}</span></td>
+                    <td><span class="badge {{ r.risk_level|risk_class }}" style="
+                        {% if r.risk_level == 'Very Low' %}background: #dbeafe; color: #1e40af;
+                        {% elif r.risk_level == 'Low' %}background: #dcfce7; color: #166534;
+                        {% elif r.risk_level == 'Moderate' %}background: #fef9c3; color: #854d0e;
+                        {% elif r.risk_level == 'High' %}background: #fed7aa; color: #9a3412;
+                        {% elif r.risk_level == 'Very High' %}background: #fecaca; color: #991b1b;
+                        {% endif %}">{{ r.risk_level }}</span></td>
                     <td>{{ r.crime_risk_score|floatformat:2 }}</td>
                     <td>{{ r.total_crimes }}</td>
                     <td style="text-align: end;">
@@ -117,27 +123,46 @@
 </div>
 
 {% if records.has_other_pages %}
+{% with page=records.number total=records.paginator.num_pages %}
 <nav aria-label="Page navigation">
     <div class="modern-pagination">
         <span class="page-info">
-            Page {{ records.number }} of {{ records.paginator.num_pages }}
+            Page {{ page }} of {{ total }}
         </span>
+
         {% if records.has_previous %}
         <a class="page-nav" href="?page={{ records.previous_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.incident_place %}&incident_place={{ request.GET.incident_place }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.dominant_crime %}&dominant_crime={{ request.GET.dominant_crime }}{% endif %}{% if request.GET.incident_weekday %}&incident_weekday={{ request.GET.incident_weekday }}{% endif %}{% if request.GET.part_of_the_day %}&part_of_the_day={{ request.GET.part_of_the_day }}{% endif %}">
-            <i class="bi bi-chevron-left"></i> Previous
+            <i class="bi bi-chevron-left"></i>
         </a>
         {% endif %}
+
+        {% comment %}
+        Smart pagination strategy:
+        - Show first 3 pages
+        - Show last 3 pages
+        - Show middle 4 pages around current
+        - Show ellipsis (...) for gaps
+        {% endcomment %}
+
         {% for i in records.paginator.page_range %}
-        <a href="?page={{ i }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.incident_place %}&incident_place={{ request.GET.incident_place }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.dominant_crime %}&dominant_crime={{ request.GET.dominant_crime }}{% endif %}{% if request.GET.incident_weekday %}&incident_weekday={{ request.GET.incident_weekday }}{% endif %}{% if request.GET.part_of_the_day %}&part_of_the_day={{ request.GET.part_of_the_day }}{% endif %}" class="{% if records.number == i %}active{% endif %}">
-            {{ i }}
-        </a>
+            {% if i <= 3 or i > total|add:"-3" or i >= page|add:"-2" and i <= page|add:"2" %}
+                <a href="?page={{ i }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.incident_place %}&incident_place={{ request.GET.incident_place }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.dominant_crime %}&dominant_crime={{ request.GET.dominant_crime }}{% endif %}{% if request.GET.incident_weekday %}&incident_weekday={{ request.GET.incident_weekday }}{% endif %}{% if request.GET.part_of_the_day %}&part_of_the_day={{ request.GET.part_of_the_day }}{% endif %}" class="{% if records.number == i %}active{% endif %}">
+                    {{ i }}
+                </a>
+            {% elif i == 4 and page > 5 %}
+                <span class="page-dots">…</span>
+            {% elif i == total|add:"-3" and page < total|add:"-4" %}
+                <span class="page-dots">…</span>
+            {% endif %}
         {% endfor %}
+
         {% if records.has_next %}
         <a class="page-nav" href="?page={{ records.next_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.incident_place %}&incident_place={{ request.GET.incident_place }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.dominant_crime %}&dominant_crime={{ request.GET.dominant_crime }}{% endif %}{% if request.GET.incident_weekday %}&incident_weekday={{ request.GET.incident_weekday }}{% endif %}{% if request.GET.part_of_the_day %}&part_of_the_day={{ request.GET.part_of_the_day }}{% endif %}">
-            Next <i class="bi bi-chevron-right"></i>
+            <i class="bi bi-chevron-right"></i>
         </a>
         {% endif %}
     </div>
 </nav>
+{% endwith %}
 {% endif %}
 {% endblock %}

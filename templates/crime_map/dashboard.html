@@ -9,40 +9,56 @@
     <p>Overview of crime data and quick actions</p>
 </div>
 
+<!-- Stats Cards -->
 <div class="stats-grid">
-    <div class="stat-card">
+    <div class="stat-card" style="border-top: 3px solid #000;">
+        <div class="stat-icon"><i class="bi bi-database"></i></div>
         <div class="num">{{ total }}</div>
         <div class="label">Total Records</div>
     </div>
-    {% for level, _ in by_risk.items %}
-    <div class="stat-card">
-        <div class="num">{{ by_risk|get_item:level }}</div>
+    {% for level, count in by_risk.items %}
+    <div class="stat-card" style="border-top: 3px solid 
+        {% if level == 'Very Low' %}#3b82f6{% elif level == 'Low' %}#22c55e{% elif level == 'Moderate' %}#eab308{% elif level == 'High' %}#f97316{% elif level == 'Very High' %}#ef4444{% else %}#000{% endif %};">
+        <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+        <div class="num">{{ count }}</div>
         <div class="label">{{ level }}</div>
     </div>
     {% endfor %}
 </div>
 
+<!-- Risk Distribution Chart + Table -->
 <div class="card mt-3">
-    <h3>Risk Level Distribution</h3>
-    <div class="table-responsive">
-        <table class="table-custom">
-            <thead>
-                <tr>
-                    <th>Risk Level</th>
-                    <th>Count</th>
-                    <th>Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for level, _ in by_risk.items %}
-                <tr>
-                    <td><span class="badge {{ level|risk_class }}">{{ level }}</span></td>
-                    <td>{{ by_risk|get_item:level }}</td>
-                    <td>{{ by_risk_pct|get_item:level }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <h2><i class="bi bi-bar-chart"></i> Risk Level Distribution</h2>
+
+    <div style="margin: 1.25rem 0;">
+        {% for level, count in by_risk.items %}
+        {% with pct=by_risk_pct|get_item:level %}
+        <div style="margin-bottom: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-2);">
+                    <span class="badge {{ level|risk_class }}" style="
+                        {% if level == 'Very Low' %}background: #dbeafe; color: #1e40af;
+                        {% elif level == 'Low' %}background: #dcfce7; color: #166534;
+                        {% elif level == 'Moderate' %}background: #fef9c3; color: #854d0e;
+                        {% elif level == 'High' %}background: #fed7aa; color: #9a3412;
+                        {% elif level == 'Very High' %}background: #fecaca; color: #991b1b;
+                        {% endif %}">
+                        {{ level }}
+                    </span>
+                </span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-2);">
+                    {{ count }} ({{ pct }}%)
+                </span>
+            </div>
+            <div style="height: 10px; background: var(--surface-3); border-radius: 5px; overflow: hidden;">
+                <div style="height: 100%; width: {{ pct }}%; border-radius: 5px; background: 
+                    {% if level == 'Very Low' %}#3b82f6{% elif level == 'Low' %}#22c55e{% elif level == 'Moderate' %}#eab308{% elif level == 'High' %}#f97316{% elif level == 'Very High' %}#ef4444{% endif %};
+                    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);">
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

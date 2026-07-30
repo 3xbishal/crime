@@ -1,12 +1,89 @@
 {% extends "crime_map/base.html" %}
+{% load static %}
 {% load custom_filters %}
 
 {% block title %}Predict Crime &middot; Crime Map{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'js/leaflet.css' %}" />
+<style>
+    #predict-map {
+        height: 420px;
+        width: 100%;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        margin-top: 1rem;
+        background: #f0f2f5;
+    }
+    @media (max-width: 768px) {
+        #predict-map { height: 320px; }
+    }
+    .predict-result-card {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.75rem;
+        margin-top: 1.5rem;
+        animation: fadeInUp 0.5s ease;
+    }
+    .predict-result-card .score-num {
+        font-size: 2.75rem;
+        font-weight: 800;
+        color: #000;
+        line-height: 1.1;
+    }
+    .predict-result-card .risk-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-sm);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .predict-result-card .neighbor-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-2);
+        transition: var(--transition-fast);
+    }
+    .predict-result-card .neighbor-item:hover { padding-left: 0.5rem; color: #000; }
+    .predict-result-card .neighbor-item:last-child { border-bottom: none; }
+    .predict-result-card .crime-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--surface-3);
+        overflow: hidden;
+        margin-top: 0.4rem;
+    }
+    .predict-result-card .crime-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        background: #000;
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .predict-result-card .crime-type-item {
+        padding: 0.5rem 0;
+    }
+    .predict-result-card .crime-type-item .label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: var(--text-2);
+    }
+    .predict-result-card .crime-type-item .label .val {
+        font-weight: 600;
+        color: #000;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <h1><i class="bi bi-graph-up-arrow"></i> Predict Crime Risk</h1>
-    <p>Enter a location and time to predict crime risk</p>
+    <p>Enter a location and time to predict crime risk using KNN analysis</p>
 </div>
 
 {% if total_records == 0 %}
@@ -20,27 +97,27 @@
         <div class="row g-3">
             <div class="col-md-6">
                 <div class="field">
-                    <label>Latitude</label>
+                    <label><i class="bi bi-geo-alt"></i> Latitude</label>
                     {{ form.latitude }}
                     <div class="help">e.g. 23.7089 (Dhaka city center)</div>
                 </div>
                 <div class="field">
-                    <label>Longitude</label>
+                    <label><i class="bi bi-geo-alt"></i> Longitude</label>
                     {{ form.longitude }}
                     <div class="help">e.g. 90.4125 (Dhaka city center)</div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="field">
-                    <label>Weekday</label>
+                    <label><i class="bi bi-calendar3"></i> Weekday</label>
                     {{ form.incident_weekday }}
                 </div>
                 <div class="field">
-                    <label>Time of Day</label>
+                    <label><i class="bi bi-clock"></i> Time of Day</label>
                     {{ form.part_of_the_day }}
                 </div>
                 <div class="field">
-                    <label>Neighbors (k)</label>
+                    <label><i class="bi bi-diagram-3"></i> Neighbors (k)</label>
                     {{ form.k_neighbors }}
                     <div class="help">How many similar records to consider (1-20).</div>
                 </div>
@@ -55,11 +132,17 @@
     </form>
 </div>
 
-<div class="card" id="predict-map"></div>
+<div class="card">
+    <h3><i class="bi bi-map"></i> Click on the map to set location</h3>
+    <div id="predict-map"></div>
+    <p class="help mt-2">
+        <i class="bi bi-info-circle"></i> Click anywhere on the map to set the latitude/longitude, or drag the marker to fine-tune.
+    </p>
+</div>
 
 {% if prediction %}
-<div class="result-card">
-    <h3>Prediction Result</h3>
+<div class="predict-result-card">
+    <h3><i class="bi bi-graph-up-arrow"></i> Prediction Result</h3>
     {% if prediction.error %}
         <div class="help">{{ prediction.error }}</div>
     {% else %}
@@ -67,24 +150,23 @@
             <div class="col-md-4 text-center">
                 <div class="score-num">{{ prediction.predicted_risk_score|floatformat:2 }}</div>
                 <div class="help">Risk Score (0-1)</div>
-                <span class="badge risk-badge {{ prediction.predicted_risk_level|risk_class }} mt-2" style="background: var(--surface-3); color: #000; border: 1px solid var(--border);">
+                <span class="badge risk-badge mt-2" style="font-size: 1rem; padding: 0.4rem 1.2rem; background: var(--surface-3); color: #000; border: 1px solid var(--border);">
                     {{ prediction.predicted_risk_level }}
                 </span>
+                <div class="mt-3">
+                    <span class="help">Based on {{ prediction.k_used }} nearest neighbor(s) from {{ prediction.candidates_considered }} candidate record(s).</span>
+                </div>
             </div>
             <div class="col-md-8">
-                <h4>Dominant Crime: <span style="color: #000; font-weight: 700;">{{ prediction.dominant_crime }}</span></h4>
-                <p class="help">
-                    Based on {{ prediction.k_used }} nearest neighbor(s) from
-                    {{ prediction.candidates_considered }} candidate record(s).
-                </p>
+                <h4 style="font-weight: 700;">Dominant Crime: <span style="color: #000;">{{ prediction.dominant_crime }}</span></h4>
 
-                <h5 class="mt-3">Weighted Risk by Crime Type</h5>
+                <h5 class="mt-3" style="font-weight: 600;">Weighted Risk by Crime Type</h5>
                 {% for crime, risk in prediction.weighted_risks.items %}
                     {% if crime != 'total_crimes' %}
-                    <div>
-                        <div class="d-flex justify-content-between">
+                    <div class="crime-type-item">
+                        <div class="label">
                             <span>{{ crime|capfirst|cut:'_' }}</span>
-                            <span>{{ risk|floatformat:4 }}</span>
+                            <span class="val">{{ risk|floatformat:4 }}</span>
                         </div>
                         <div class="crime-bar">
                             <div class="crime-bar-fill" style="width: {{ risk|floatformat:0 }}%;"></div>
@@ -93,7 +175,7 @@
                     {% endif %}
                 {% endfor %}
 
-                <h5 class="mt-3">Nearest Neighbors</h5>
+                <h5 class="mt-3" style="font-weight: 600;">Nearest Neighbors</h5>
                 {% for n in prediction.nearest_neighbors %}
                 <div class="neighbor-item">
                     <div>
@@ -114,28 +196,51 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/leaflet.js' %}"></script>
 <script>
-    let predictMap = null;
-    let predictMarker = null;
+document.addEventListener('DOMContentLoaded', function () {
+    'use strict';
+
+    if (typeof L === 'undefined') return;
+
+    var predictMap = null;
+    var predictMarker = null;
 
     function initPredictMap() {
-        predictMap = L.map('predict-map').setView([23.685, 90.3563], 7);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        predictMap = L.map('predict-map', {
+            scrollWheelZoom: false,
+            zoomControl: true,
+        }).setView([23.685, 90.3563], 7);
+
+        // CartoDB Positron — matches the main map style
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
         }).addTo(predictMap);
 
+        // Click to set location
         predictMap.on('click', function(e) {
             document.getElementById('id_latitude').value = e.latlng.lat.toFixed(4);
             document.getElementById('id_longitude').value = e.latlng.lng.toFixed(4);
             updateMarker(e.latlng);
         });
 
+        // Enable scroll wheel zoom on interaction
+        predictMap.on('focus', function() {
+            predictMap.scrollWheelZoom.enable();
+        });
+        predictMap.on('click', function() {
+            predictMap.scrollWheelZoom.enable();
+        });
+
+        // Sync with input changes
         document.getElementById('id_latitude').addEventListener('change', updateFromInputs);
         document.getElementById('id_longitude').addEventListener('change', updateFromInputs);
 
-        const latInput = document.getElementById('id_latitude');
-        const lngInput = document.getElementById('id_longitude');
+        // If form has existing values, show the marker
+        var latInput = document.getElementById('id_latitude');
+        var lngInput = document.getElementById('id_longitude');
         if (latInput.value && lngInput.value) {
             updateFromInputs();
         }
@@ -147,7 +252,7 @@
         }
         predictMarker = L.marker(latlng, { draggable: true }).addTo(predictMap);
         predictMarker.on('dragend', function(e) {
-            const pos = e.target.getLatLng();
+            var pos = e.target.getLatLng();
             document.getElementById('id_latitude').value = pos.lat.toFixed(4);
             document.getElementById('id_longitude').value = pos.lng.toFixed(4);
         });
@@ -155,17 +260,14 @@
     }
 
     function updateFromInputs() {
-        const lat = parseFloat(document.getElementById('id_latitude').value);
-        const lng = parseFloat(document.getElementById('id_longitude').value);
+        var lat = parseFloat(document.getElementById('id_latitude').value);
+        var lng = parseFloat(document.getElementById('id_longitude').value);
         if (!isNaN(lat) && !isNaN(lng)) {
             updateMarker(L.latLng(lat, lng));
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        if (typeof L !== 'undefined') {
-            initPredictMap();
-        }
-    });
+    initPredictMap();
+});
 </script>
 {% endblock %}

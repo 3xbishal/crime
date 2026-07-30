@@ -4,9 +4,9 @@
 {% block title %}Crime Map &middot; Interactive Map{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<link rel="stylesheet" href="{% static 'js/leaflet.css' %}" />
+<link rel="stylesheet" href="{% static 'js/MarkerCluster.css' %}" />
+<link rel="stylesheet" href="{% static 'js/MarkerCluster.Default.css' %}" />
 <style>
     /* ── Map Container ── */
     #map-container {
@@ -356,6 +356,14 @@
             {{ form.part_of_the_day }}
         </div>
         <div class="field">
+            <label>Start date</label>
+            {{ form.start_date }}
+        </div>
+        <div class="field">
+            <label>End date</label>
+            {{ form.end_date }}
+        </div>
+        <div class="field">
             <label>Min risk score</label>
             {{ form.min_risk_score }}
         </div>
@@ -421,9 +429,9 @@
 
 {% block extra_scripts %}
 {{ points|json_script:"crime-points-data" }}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/leaflet.js' %}"></script>
 <script src="{% static 'js/leaflet-heat.js' %}"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="{% static 'js/leaflet.markercluster.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     'use strict';
