@@ -3,20 +3,20 @@
 
 {% block content %}
 <div class="page-header">
-    <h2>Upload Crime Data CSV</h2>
-    <p class="text-muted mb-0">Upload a CSV file to import crime data. Records are automatically <strong>de-duplicated</strong> by (place, weekday, time-of-day).</p>
+    <h2><i class="bi bi-upload"></i> Upload Crime Data CSV</h2>
+    <p style="color: var(--text-3); margin: 0;">Upload a CSV file to import crime data. Records are automatically <strong style="color: #000;">de-duplicated</strong> by (place, weekday, time-of-day).</p>
 </div>
 
 <div class="row g-3">
     <div class="col-lg-8">
         <div class="card">
-            <h3>Upload File</h3>
+            <h3><i class="bi bi-file-earmark-arrow-up"></i> Upload File</h3>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                <div class="mb-3">
-                    <label for="id_csv_file" class="form-label">CSV File</label>
+                <div class="field">
+                    <label><i class="bi bi-file-earmark-csv"></i> CSV File</label>
                     {{ form.csv_file }}
-                    <div class="form-text">
+                    <div class="help">
                         The CSV should contain columns such as
                         <code>incident_place, incident_weekday, part_of_the_day, latitude, longitude,
                         crime_risk_score, murder_risk, rape_risk, kidnap_risk, bodyfound_risk,
@@ -25,30 +25,30 @@
                         risk_level, marker_radius, dominant_crime</code>.
                     </div>
                     {% if form.csv_file.errors %}
-                        <div class="text-danger mt-2">
+                        <div class="help" style="color: #000;">
                             {% for e in form.csv_file.errors %}{{ e }}{% endfor %}
                         </div>
                     {% endif %}
                 </div>
 
-                <div class="mb-3">
+                <div class="field">
                     <div class="form-check">
                         {{ form.replace_existing }}
-                        <label class="form-check-label" for="id_replace_existing">
+                        <label class="form-check-label" for="id_replace_existing" style="margin-left: 0.5rem;">
                             {{ form.replace_existing.label }}
                         </label>
                     </div>
-                    <div class="form-text">
+                    <div class="help">
                         Tick to wipe all existing records before importing this file.
                         Leave unchecked to merge (update duplicates, add new).
                     </div>
                 </div>
 
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
+                <div class="action-bar mt-3">
+                    <button type="submit" class="btn-primary">
                         <i class="bi bi-upload"></i> Import CSV
                     </button>
-                    <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                    <a href="{% url 'admin_panel:dashboard' %}" class="btn-secondary">Cancel</a>
                 </div>
             </form>
         </div>
@@ -56,16 +56,16 @@
 
     <div class="col-lg-4">
         <div class="card">
-            <h3>Current Data</h3>
-            <p>There are currently <strong class="text-accent">{{ total_records }}</strong> crime record(s) in the database.</p>
-            <div class="d-flex flex-column gap-2">
-                <a href="{% url 'admin_panel:data_list' %}" class="btn btn-secondary">
+            <h3><i class="bi bi-database"></i> Current Data</h3>
+            <p>There are currently <strong style="color: #000;">{{ total_records }}</strong> crime record(s) in the database.</p>
+            <div class="d-flex flex-column gap-2 mt-3">
+                <a href="{% url 'admin_panel:data_list' %}" class="btn-secondary">
                     <i class="bi bi-table"></i> View Records
                 </a>
-                <a href="{% url 'admin_panel:data_export' %}" class="btn btn-secondary">
+                <a href="{% url 'admin_panel:data_export' %}" class="btn-secondary">
                     <i class="bi bi-download"></i> Export CSV
                 </a>
-                <a href="{% url 'admin_panel:data_export_pdf' %}" class="btn btn-secondary">
+                <a href="{% url 'admin_panel:data_export_pdf' %}" class="btn-secondary">
                     <i class="bi bi-file-earmark-pdf"></i> Export PDF
                 </a>
             </div>

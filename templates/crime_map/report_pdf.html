@@ -62,6 +62,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>SN</th>
                     <th>Place</th>
                     <th>Weekday</th>
                     <th>Part of Day</th>
@@ -76,6 +77,7 @@
             <tbody>
                 {% for r in records %}
                 <tr>
+                    <td>{{ forloop.counter }}</td>
                     <td>{{ r.incident_place }}</td>
                     <td>{{ r.incident_weekday|title }}</td>
                     <td>{{ r.part_of_the_day|title }}</td>

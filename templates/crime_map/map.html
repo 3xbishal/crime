@@ -5,28 +5,42 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-    #map { height: 70vh; width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+    #map { height: 65vh; width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); }
     .filter-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
-    .filter-bar .field { margin-bottom: 0; min-width: 140px; flex: 1 1 140px; }
-    .legend { background: var(--panel-2); padding: 0.75rem 1rem; border-radius: 8px; margin-top: 0.75rem; display: flex; gap: 1rem; flex-wrap: wrap; }
-    .legend .item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
-    .legend .swatch { width: 14px; height: 14px; border-radius: 50%; }
-    .map-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
-    .api-warning { background: rgba(239,68,68,0.15); border: 1px solid var(--danger); color: #fecaca; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
-    .leaflet-popup-content { font-family: "Segoe UI", sans-serif; }
+    .filter-bar .field { margin-bottom: 0; min-width: 130px; flex: 1 1 130px; }
+    .legend {
+        background: var(--surface-2);
+        padding: 0.85rem 1.1rem;
+        border-radius: var(--radius-sm);
+        margin-top: 0.85rem;
+        display: flex;
+        gap: 1.1rem;
+        flex-wrap: wrap;
+        border: 1px solid var(--border);
+    }
+    .legend .item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-2); font-weight: 500; }
+    .legend .swatch { width: 14px; height: 14px; border-radius: 50%; background: #000; }
+    .map-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.6rem; }
+    .leaflet-popup-content { font-family: var(--font); }
     .leaflet-popup-content table { width: 100%; font-size: 12px; border-collapse: collapse; }
-    .leaflet-popup-content th { text-align: left; color: #94a3b8; }
-    .leaflet-popup-content .badge { font-size: 0.7rem; }
+    .leaflet-popup-content th { text-align: left; color: #666; }
+    .leaflet-popup-content .badge { font-size: 0.7rem; background: var(--surface-3); color: #000; border: 1px solid var(--border); }
     .leaflet-popup-content .crime-row { display: flex; justify-content: space-between; padding: 1px 0; }
-    .leaflet-popup-content .crime-row .crime-name { color: #94a3b8; }
-    .leaflet-popup-content .crime-row .crime-val { color: #e2e8f0; font-weight: 600; }
+    .leaflet-popup-content .crime-name { color: #666; }
+    .leaflet-popup-content .crime-val { color: #000; font-weight: 600; }
+    @media (max-width: 768px) {
+        #map { height: 50vh; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>Crime Risk Map</h2>
+<div class="page-header">
+    <h1><i class="bi bi-map"></i> Crime Map</h1>
+    <p>Interactive crime risk visualization</p>
+</div>
 
+<div class="card">
     <form method="get" class="filter-bar">
         <div class="field">
             <label>Place</label>
@@ -59,11 +73,11 @@
     </form>
 
     <div class="legend">
-        <div class="item"><span class="swatch" style="background:#3b82f6;"></span> Very Low</div>
-        <div class="item"><span class="swatch" style="background:#22c55e;"></span> Low</div>
-        <div class="item"><span class="swatch" style="background:#eab308;"></span> Moderate</div>
-        <div class="item"><span class="swatch" style="background:#f97316;"></span> High</div>
-        <div class="item"><span class="swatch" style="background:#ef4444;"></span> Very High</div>
+        <div class="item"><span class="swatch" style="background:#fff; border: 1px solid #ccc;"></span> Very Low</div>
+        <div class="item"><span class="swatch" style="background:#e0e0e0;"></span> Low</div>
+        <div class="item"><span class="swatch" style="background:#999;"></span> Moderate</div>
+        <div class="item"><span class="swatch" style="background:#555;"></span> High</div>
+        <div class="item"><span class="swatch" style="background:#000;"></span> Very High</div>
     </div>
 </div>
 
@@ -75,13 +89,13 @@
                 <span class="help">No data matches the current filters{% if total_count == 0 %} &mdash; upload a CSV first{% endif %}.</span>
             {% endif %}
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <button class="btn secondary" id="toggle-heatmap">Heatmap</button>
-            <button class="btn secondary" id="toggle-clustering">Clustering</button>
-            <button class="btn secondary" id="toggle-fullscreen">
+        <div class="btn-group">
+            <button class="btn secondary btn-sm" id="toggle-heatmap">Heatmap</button>
+            <button class="btn secondary btn-sm" id="toggle-clustering">Clustering</button>
+            <button class="btn secondary btn-sm" id="toggle-fullscreen">
                 <i class="bi bi-arrows-fullscreen"></i> Fullscreen
             </button>
-            <a href="{% url 'crime_map:predict' %}" class="btn">Predict Crime</a>
+            <a href="{% url 'crime_map:predict' %}" class="btn btn-sm">Predict Crime</a>
         </div>
     </div>
 
@@ -100,11 +114,11 @@
     const POINTS = JSON.parse(document.getElementById("crime-points-data").textContent);
 
     const RISK_COLORS = {
-        "Very Low": "#3b82f6",
-        "Low": "#22c55e",
-        "Moderate": "#eab308",
-        "High": "#f97316",
-        "Very High": "#ef4444",
+        "Very Low": "#ffffff",
+        "Low": "#cccccc",
+        "Moderate": "#888888",
+        "High": "#555555",
+        "Very High": "#000000",
     };
 
     function riskClass(level) {
@@ -125,18 +139,18 @@
             `<div class="crime-row"><span class="crime-name">${name}</span><span class="crime-val">${count} (${(risk * 100).toFixed(1)}%)</span></div>`
         ).join("");
         return `
-            <div style="min-width:220px; font-family:Segoe UI, sans-serif;">
+            <div style="min-width:220px; font-family:var(--font); background: #fff; color: #000; padding: 8px; border-radius: 8px;">
                 <strong>${p.incident_place}</strong><br>
-                <span style="color:#64748b;">${p.incident_weekday} &middot; ${p.part_of_the_day}</span><br>
+                <span style="color:#666;">${p.incident_weekday} &middot; ${p.part_of_the_day}</span><br>
                 <span class="badge ${riskClass(p.risk_level)}" style="margin-top:4px;">${p.risk_level}</span>
-                <span style="margin-left:6px; color:#64748b;">dominant: ${p.dominant_crime.replace("_risk","")}</span>
-                <hr style="margin:8px 0; border-color:#e2e8f0;">
+                <span style="margin-left:6px; color:#666;">dominant: ${p.dominant_crime.replace("_risk","")}</span>
+                <hr style="margin:8px 0; border-color:#dee2e6;">
                 ${rows}
-                <div style="margin-top:6px; color:#64748b;">
+                <div style="margin-top:6px; color:#666;">
                     Total crimes: <strong>${p.total_crimes}</strong> &middot;
                     Score: <strong>${(p.crime_risk_score * 100).toFixed(1)}%</strong>
                 </div>
-                <a href="${googleMapsUrl}" target="_blank" rel="noopener" style="display:inline-block; margin-top:8px; color:#38bdf8; text-decoration:none; font-size:12px;">
+                <a href="${googleMapsUrl}" target="_blank" rel="noopener" style="display:inline-block; margin-top:8px; color:#000; text-decoration:none; font-size:12px;">
                     View on Google Maps <i class="bi bi-box-arrow-up-right" style="font-size:10px;"></i>
                 </a>
             </div>`;
@@ -148,7 +162,7 @@
     function initMap() {
         const center = POINTS.length
             ? { lat: POINTS[0].latitude, lng: POINTS[0].longitude }
-            : { lat: 23.685, lng: 90.3563 }; // Bangladesh centroid
+            : { lat: 23.685, lng: 90.3563 };
 
         map = L.map('map').setView([center.lat, center.lng], POINTS.length ? 8 : 7);
 
@@ -203,7 +217,7 @@
                 radius: 25,
                 blur: 15,
                 maxZoom: 17,
-                gradient: { 0.2: '#3b82f6', 0.4: '#22c55e', 0.6: '#eab308', 0.8: '#f97316', 1.0: '#ef4444' },
+                gradient: { 0.2: '#ffffff', 0.4: '#cccccc', 0.6: '#888888', 0.8: '#555555', 1.0: '#000000' },
             });
             heatmapLayer.addTo(map);
             return;
@@ -216,10 +230,9 @@
         }
 
         POINTS.forEach(p => {
-            const color = RISK_COLORS[p.risk_level] || "#64748b";
+            const color = RISK_COLORS[p.risk_level] || "#888888";
             const radius = Math.max(50, (p.marker_radius || 7) * 120);
 
-            // Crime "range" circle
             const circle = L.circle([p.latitude, p.longitude], {
                 color: color,
                 weight: 1,
@@ -233,7 +246,7 @@
             const marker = L.circleMarker([p.latitude, p.longitude], {
                 radius: 6,
                 fillColor: color,
-                color: "#0f172a",
+                color: "#000000",
                 weight: 1,
                 fillOpacity: 1,
             });
@@ -257,7 +270,6 @@
         }
     }
 
-    // Initialize map when the page loads
     document.addEventListener("DOMContentLoaded", function() {
         if (typeof L !== 'undefined') {
             initMap();

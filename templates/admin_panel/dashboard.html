@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="page-header">
-    <h2>Admin Dashboard</h2>
-    <p class="text-muted mb-0">Overview of all crime data in the system.</p>
+    <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+    <p style="color: var(--text-3); margin: 0;">Overview of all crime data in the system.</p>
 </div>
 
 <div class="row g-3 mb-4">
@@ -38,12 +38,12 @@
 <div class="row g-3 mb-3">
     <div class="col-lg-6">
         <div class="card">
-            <h3>Risk Level Distribution</h3>
+            <h3><i class="bi bi-bar-chart"></i> Risk Level Distribution</h3>
             <div class="mt-3">
                 {% for level, count in by_risk.items %}
-                    <div class="d-flex justify-content-between mb-2 align-items-center">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.6rem; align-items: center;">
                         <span class="badge {{ level|risk_class }}">{{ level }}</span>
-                        <span class="text-accent fw-semibold">{{ count }}</span>
+                        <span style="color: #000; font-weight: 600;">{{ count }}</span>
                     </div>
                 {% endfor %}
             </div>
@@ -52,12 +52,12 @@
 
     <div class="col-lg-6">
         <div class="card">
-            <h3>Records by Weekday</h3>
+            <h3><i class="bi bi-calendar-week"></i> Records by Weekday</h3>
             <div class="mt-3">
                 {% for weekday, count in by_weekday.items %}
-                    <div class="d-flex justify-content-between mb-2 align-items-center">
-                        <span class="text-capitalize">{{ weekday|cut:'_'|title }}</span>
-                        <span class="text-accent fw-semibold">{{ count }}</span>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.6rem; align-items: center;">
+                        <span style="text-transform: capitalize;">{{ weekday|cut:'_'|title }}</span>
+                        <span style="color: #000; font-weight: 600;">{{ count }}</span>
                     </div>
                 {% endfor %}
             </div>
@@ -68,12 +68,12 @@
 <div class="row g-3 mb-3">
     <div class="col-lg-6">
         <div class="card">
-            <h3>Records by Time of Day</h3>
+            <h3><i class="bi bi-clock"></i> Records by Time of Day</h3>
             <div class="mt-3">
                 {% for part, count in by_part.items %}
-                    <div class="d-flex justify-content-between mb-2 align-items-center">
-                        <span class="text-capitalize">{{ part|cut:'_'|title }}</span>
-                        <span class="text-accent fw-semibold">{{ count }}</span>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.6rem; align-items: center;">
+                        <span style="text-transform: capitalize;">{{ part|cut:'_'|title }}</span>
+                        <span style="color: #000; font-weight: 600;">{{ count }}</span>
                     </div>
                 {% endfor %}
             </div>
@@ -82,9 +82,9 @@
 
     <div class="col-lg-6">
         <div class="card">
-            <h3>Recent Uploads</h3>
+            <h3><i class="bi bi-upload"></i> Recent Uploads</h3>
             <div class="table-responsive">
-                <table class="table table-dark-custom table-sm mb-0">
+                <table class="table-custom mb-0">
                     <thead>
                         <tr>
                             <th>File</th>
@@ -97,14 +97,14 @@
                     <tbody>
                         {% for upload in recent_uploads %}
                         <tr>
-                            <td class="text-truncate" style="max-width: 160px;">{{ upload.file.name|cut:'csv_uploads/' }}</td>
-                            <td class="text-accent">{{ upload.records_imported }}</td>
-                            <td class="text-accent">{{ upload.records_updated }}</td>
-                            <td class="text-muted">{{ upload.records_skipped }}</td>
-                            <td class="text-muted">{{ upload.uploaded_at|date:"M d, Y" }}</td>
+                            <td style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ upload.file.name|cut:'csv_uploads/' }}</td>
+                            <td style="color: #000; font-weight: 600;">{{ upload.records_imported }}</td>
+                            <td style="color: #000; font-weight: 600;">{{ upload.records_updated }}</td>
+                            <td style="color: var(--text-3);">{{ upload.records_skipped }}</td>
+                            <td style="color: var(--text-3);">{{ upload.uploaded_at|date:"M d, Y" }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="5" class="text-center text-muted">No uploads yet.</td></tr>
+                        <tr><td colspan="5" style="text-align: center; color: var(--text-3);">No uploads yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -116,14 +116,14 @@
 <div class="row g-3 mb-3">
     <div class="col-12">
         <div class="card">
-            <h3>Top Incident Places</h3>
+            <h3><i class="bi bi-pin-map"></i> Top Incident Places</h3>
             <div class="table-responsive">
-                <table class="table table-dark-custom table-sm mb-0">
+                <table class="table-custom mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 60px;">#</th>
+                            <th style="width: 50px;">#</th>
                             <th>Place</th>
-                            <th style="width: 120px;">Records</th>
+                            <th style="width: 100px;">Records</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -131,10 +131,10 @@
                         <tr>
                             <td>{{ forloop.counter }}</td>
                             <td>{{ place.incident_place }}</td>
-                            <td class="text-accent fw-semibold">{{ place.count }}</td>
+                            <td style="color: #000; font-weight: 600;">{{ place.count }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="3" class="text-center text-muted">No data yet.</td></tr>
+                        <tr><td colspan="3" style="text-align: center; color: var(--text-3);">No data yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -144,16 +144,16 @@
 </div>
 
 <div class="action-bar">
-    <a href="{% url 'admin_panel:upload_csv' %}" class="btn btn-primary">
+    <a href="{% url 'admin_panel:upload_csv' %}" class="btn-primary">
         <i class="bi bi-upload"></i> Upload CSV
     </a>
-    <a href="{% url 'admin_panel:data_list' %}" class="btn btn-secondary">
+    <a href="{% url 'admin_panel:data_list' %}" class="btn-secondary">
         <i class="bi bi-table"></i> View All Records
     </a>
-    <a href="{% url 'admin_panel:data_export' %}" class="btn btn-secondary">
+    <a href="{% url 'admin_panel:data_export' %}" class="btn-secondary">
         <i class="bi bi-download"></i> Export CSV
     </a>
-    <a href="{% url 'admin_panel:data_export_pdf' %}" class="btn btn-secondary">
+    <a href="{% url 'admin_panel:data_export_pdf' %}" class="btn-secondary">
         <i class="bi bi-file-earmark-pdf"></i> Export PDF
     </a>
 </div>

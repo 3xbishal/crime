@@ -14,6 +14,7 @@ import csv
 import io
 from datetime import datetime
 
+from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -28,7 +29,7 @@ from .forms import CSVUploadForm, CrimeDataForm, CrimeFilterForm
 from .models import CrimeData, CSVUpload
 
 # Re-use the column-mapping helpers from views.py
-from .views import COLUMN_MAP, INT_FIELDS, FLOAT_FIELDS, _coerce
+from .views import COLUMN_MAP, INT_FIELDS, FLOAT_FIELDS, _coerce, apply_filters
 
 try:
     from xhtml2pdf import pisa

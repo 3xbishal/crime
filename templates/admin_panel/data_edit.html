@@ -3,8 +3,8 @@
 
 {% block content %}
 <div class="page-header">
-    <h2>Edit Record</h2>
-    <p class="text-muted mb-0">ID: {{ record.pk }} &middot; Place: {{ record.incident_place }}</p>
+    <h2><i class="bi bi-pencil"></i> Edit Record</h2>
+    <p style="color: var(--text-3); margin: 0;">ID: <strong style="color: #000;">{{ record.pk }}</strong> &middot; Place: <strong style="color: #000;">{{ record.incident_place }}</strong></p>
 </div>
 
 <div class="card">
@@ -12,115 +12,115 @@
         {% csrf_token %}
         <div class="row g-3">
             <div class="col-md-6">
-                <h3>Location &amp; Time</h3>
-                <div class="mb-3">
-                    <label class="form-label">Incident Place</label>
+                <h3><i class="bi bi-geo-alt"></i> Location & Time</h3>
+                <div class="field">
+                    <label><i class="bi bi-pin-map"></i> Incident Place</label>
                     {{ form.incident_place }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Weekday</label>
+                <div class="field">
+                    <label><i class="bi bi-calendar-week"></i> Weekday</label>
                     {{ form.incident_weekday }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Part of Day</label>
+                <div class="field">
+                    <label><i class="bi bi-clock"></i> Part of Day</label>
                     {{ form.part_of_the_day }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Latitude</label>
+                <div class="field">
+                    <label><i class="bi bi-crosshair"></i> Latitude</label>
                     {{ form.latitude }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Longitude</label>
+                <div class="field">
+                    <label><i class="bi bi-crosshair"></i> Longitude</label>
                     {{ form.longitude }}
                 </div>
             </div>
             <div class="col-md-6">
-                <h3>Risk Assessment</h3>
-                <div class="mb-3">
-                    <label class="form-label">Risk Level</label>
+                <h3><i class="bi bi-bar-chart"></i> Risk Assessment</h3>
+                <div class="field">
+                    <label><i class="bi bi-shield-exclamation"></i> Risk Level</label>
                     {{ form.risk_level }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Crime Risk Score (0-1)</label>
+                <div class="field">
+                    <label><i class="bi bi-graph-up"></i> Crime Risk Score (0-1)</label>
                     {{ form.crime_risk_score }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Dominant Crime</label>
+                <div class="field">
+                    <label><i class="bi bi-exclamation-triangle"></i> Dominant Crime</label>
                     {{ form.dominant_crime }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Marker Radius</label>
+                <div class="field">
+                    <label><i class="bi bi-circle"></i> Marker Radius</label>
                     {{ form.marker_radius }}
                 </div>
             </div>
         </div>
 
-        <h3 class="mt-3">Crime Type Risks</h3>
+        <h3 class="mt-3"><i class="bi bi-pie-chart"></i> Crime Type Risks</h3>
         <div class="row g-3">
             <div class="col-md-6">
-                <div class="mb-3">
-                    <label class="form-label">Murder Risk</label>
+                <div class="field">
+                    <label><i class="bi bi-x-circle"></i> Murder Risk</label>
                     {{ form.murder_risk }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Rape Risk</label>
+                <div class="field">
+                    <label><i class="bi bi-x-circle"></i> Rape Risk</label>
                     {{ form.rape_risk }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Kidnap Risk</label>
+                <div class="field">
+                    <label><i class="bi bi-x-circle"></i> Kidnap Risk</label>
                     {{ form.kidnap_risk }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Body Found Risk</label>
+                <div class="field">
+                    <label><i class="bi bi-x-circle"></i> Body Found Risk</label>
                     {{ form.bodyfound_risk }}
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="mb-3">
-                    <label class="form-label">Robbery Risk</label>
+                <div class="field">
+                    <label><i class="bi bi-x-circle"></i> Robbery Risk</label>
                     {{ form.robbery_risk }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Assault Risk</label>
+                <div class="field">
+                    <label><i class="bi bi-x-circle"></i> Assault Risk</label>
                     {{ form.assault_risk }}
                 </div>
-                <h4 class="mt-3">Totals</h4>
-                <div class="mb-3">
-                    <label class="form-label">Total Crimes</label>
+                <h4 class="mt-3"><i class="bi bi-sigma"></i> Totals</h4>
+                <div class="field">
+                    <label><i class="bi bi-hash"></i> Total Crimes</label>
                     {{ form.total_crimes }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Total Murders</label>
+                <div class="field">
+                    <label><i class="bi bi-hash"></i> Total Murders</label>
                     {{ form.total_murders }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Total Rapes</label>
+                <div class="field">
+                    <label><i class="bi bi-hash"></i> Total Rapes</label>
                     {{ form.total_rapes }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Total Kidnaps</label>
+                <div class="field">
+                    <label><i class="bi bi-hash"></i> Total Kidnaps</label>
                     {{ form.total_kidnaps }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Total Body Founds</label>
+                <div class="field">
+                    <label><i class="bi bi-hash"></i> Total Body Founds</label>
                     {{ form.total_bodyfounds }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Total Robberies</label>
+                <div class="field">
+                    <label><i class="bi bi-hash"></i> Total Robberies</label>
                     {{ form.total_robberys }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Total Assaults</label>
+                <div class="field">
+                    <label><i class="bi bi-hash"></i> Total Assaults</label>
                     {{ form.total_assaults }}
                 </div>
             </div>
         </div>
 
         <div class="action-bar mt-3">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn-primary">
                 <i class="bi bi-check-lg"></i> Save Changes
             </button>
-            <a href="{% url 'admin_panel:data_detail' record.pk %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% url 'admin_panel:data_detail' record.pk %}" class="btn-secondary">Cancel</a>
         </div>
     </form>
 </div>

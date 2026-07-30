@@ -3,27 +3,10 @@
 
 {% block title %}Predict Crime &middot; Crime Map{% endblock %}
 
-{% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-    #predict-map { height: 420px; width: 100%; border-radius: 10px; border: 1px solid var(--border); margin-top: 1rem; }
-    .result-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-top: 1.25rem; }
-    .result-card .score-num { font-size: 2.5rem; font-weight: 700; }
-    .risk-badge { font-size: 1.1rem; padding: 0.4rem 0.8rem; }
-    .neighbor-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
-    .neighbor-item:last-child { border-bottom: none; }
-    .crime-bar { height: 20px; border-radius: 4px; background: var(--border); overflow: hidden; margin-top: 0.35rem; }
-    .crime-bar-fill { height: 100%; border-radius: 4px; }
-    @media (max-width: 768px) {
-        #predict-map { height: 320px; }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="page-header">
-    <h2>Predict Crime Risk</h2>
-    <p class="text-muted mb-0">Enter a location and time to predict crime risk using k-nearest-neighbors from your uploaded data.</p>
+    <h1><i class="bi bi-graph-up-arrow"></i> Predict Crime Risk</h1>
+    <p>Enter a location and time to predict crime risk</p>
 </div>
 
 {% if total_records == 0 %}
@@ -36,34 +19,34 @@
     <form method="get" id="predict-form">
         <div class="row g-3">
             <div class="col-md-6">
-                <div class="mb-3">
-                    <label class="form-label">Latitude</label>
+                <div class="field">
+                    <label>Latitude</label>
                     {{ form.latitude }}
                     <div class="help">e.g. 23.7089 (Dhaka city center)</div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Longitude</label>
+                <div class="field">
+                    <label>Longitude</label>
                     {{ form.longitude }}
                     <div class="help">e.g. 90.4125 (Dhaka city center)</div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="mb-3">
-                    <label class="form-label">Weekday</label>
+                <div class="field">
+                    <label>Weekday</label>
                     {{ form.incident_weekday }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Time of Day</label>
+                <div class="field">
+                    <label>Time of Day</label>
                     {{ form.part_of_the_day }}
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Neighbors (k)</label>
+                <div class="field">
+                    <label>Neighbors (k)</label>
                     {{ form.k_neighbors }}
                     <div class="help">How many similar records to consider (1-20).</div>
                 </div>
             </div>
         </div>
-        <div class="d-flex gap-2 mt-3">
+        <div class="btn-group mt-3">
             <button type="submit" class="btn" {% if total_records == 0 %}disabled{% endif %}>
                 <i class="bi bi-graph-up-arrow"></i> Predict Crime Risk
             </button>
@@ -78,25 +61,18 @@
 <div class="result-card">
     <h3>Prediction Result</h3>
     {% if prediction.error %}
-        <div class="help" style="color: var(--danger);">{{ prediction.error }}</div>
+        <div class="help">{{ prediction.error }}</div>
     {% else %}
         <div class="row g-3">
             <div class="col-md-4 text-center">
-                <div class="score-num" style="color:
-                    {% if prediction.predicted_risk_level == 'Very High' %}#ef4444
-                    {% elif prediction.predicted_risk_level == 'High' %}#f97316
-                    {% elif prediction.predicted_risk_level == 'Moderate' %}#eab308
-                    {% elif prediction.predicted_risk_level == 'Low' %}#22c55e
-                    {% else %}#3b82f6{% endif %};">
-                    {{ prediction.predicted_risk_score|floatformat:2 }}
-                </div>
+                <div class="score-num">{{ prediction.predicted_risk_score|floatformat:2 }}</div>
                 <div class="help">Risk Score (0-1)</div>
-                <span class="badge risk-badge {{ prediction.predicted_risk_level|risk_class }} mt-2">
+                <span class="badge risk-badge {{ prediction.predicted_risk_level|risk_class }} mt-2" style="background: var(--surface-3); color: #000; border: 1px solid var(--border);">
                     {{ prediction.predicted_risk_level }}
                 </span>
             </div>
             <div class="col-md-8">
-                <h4>Dominant Crime: <span class="text-accent">{{ prediction.dominant_crime }}</span></h4>
+                <h4>Dominant Crime: <span style="color: #000; font-weight: 700;">{{ prediction.dominant_crime }}</span></h4>
                 <p class="help">
                     Based on {{ prediction.k_used }} nearest neighbor(s) from
                     {{ prediction.candidates_considered }} candidate record(s).
@@ -111,12 +87,7 @@
                             <span>{{ risk|floatformat:4 }}</span>
                         </div>
                         <div class="crime-bar">
-                            <div class="crime-bar-fill" style="width: {{ risk|floatformat:0 }}%; background:
-                                {% if risk >= 0.8 %}#ef4444
-                                {% elif risk >= 0.6 %}#f97316
-                                {% elif risk >= 0.4 %}#eab308
-                                {% elif risk >= 0.2 %}#22c55e
-                                {% else %}#3b82f6{% endif %};"></div>
+                            <div class="crime-bar-fill" style="width: {{ risk|floatformat:0 }}%;"></div>
                         </div>
                     </div>
                     {% endif %}
@@ -129,7 +100,7 @@
                         <strong>{{ n.incident_place }}</strong>
                         <div class="help">{{ n.risk_level }}</div>
                     </div>
-                    <div class="text-end">
+                    <div style="text-align: right;">
                         <div>{{ n.distance_km }} km</div>
                         <div class="help">Score: {{ n.crime_risk_score|floatformat:2 }}</div>
                     </div>
@@ -154,18 +125,15 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         }).addTo(predictMap);
 
-        // Click on map to set coordinates
         predictMap.on('click', function(e) {
             document.getElementById('id_latitude').value = e.latlng.lat.toFixed(4);
             document.getElementById('id_longitude').value = e.latlng.lng.toFixed(4);
             updateMarker(e.latlng);
         });
 
-        // Update marker when inputs change
         document.getElementById('id_latitude').addEventListener('change', updateFromInputs);
         document.getElementById('id_longitude').addEventListener('change', updateFromInputs);
 
-        // Set initial marker from form values if present
         const latInput = document.getElementById('id_latitude');
         const lngInput = document.getElementById('id_longitude');
         if (latInput.value && lngInput.value) {
