@@ -236,33 +236,17 @@ def admin_upload_csv(request):
 @admin_required
 def admin_data_list(request):
     """List all crime records with optional filtering."""
+    form = CrimeFilterForm(request.GET or None)
     qs = CrimeData.objects.all()
-    place = request.GET.get("place", "")
-    risk = request.GET.get("risk", "")
-    weekday = request.GET.get("weekday", "")
-    part = request.GET.get("part", "")
-
-    if place:
-        qs = qs.filter(incident_place__icontains=place)
-    if risk:
-        qs = qs.filter(risk_level=risk)
-    if weekday:
-        qs = qs.filter(incident_weekday=weekday)
-    if part:
-        qs = qs.filter(part_of_the_day=part)
-
+    qs = apply_filters(qs, form)
     qs = qs.order_by("-uploaded_at", "incident_place")
-    # Paginate
-    from django.core.paginator import Paginator
+
     paginator = Paginator(qs, 50)
     page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(request, "admin_panel/data_list.html", {
         "records": page_obj,
-        "place": place,
-        "risk": risk,
-        "weekday": weekday,
-        "part": part,
+        "form": form,
         "WEEKDAYS": CrimeFilterForm.WEEKDAYS,
         "PART_OF_DAY": CrimeFilterForm.PART_OF_DAY,
     })
@@ -306,20 +290,9 @@ def admin_data_delete(request, pk):
 @admin_required
 def admin_data_export(request):
     """Export all (or filtered) crime records as CSV."""
+    form = CrimeFilterForm(request.GET or None)
     qs = CrimeData.objects.all()
-    place = request.GET.get("place", "")
-    risk = request.GET.get("risk", "")
-    weekday = request.GET.get("weekday", "")
-    part = request.GET.get("part", "")
-
-    if place:
-        qs = qs.filter(incident_place__icontains=place)
-    if risk:
-        qs = qs.filter(risk_level=risk)
-    if weekday:
-        qs = qs.filter(incident_weekday=weekday)
-    if part:
-        qs = qs.filter(part_of_the_day=part)
+    qs = apply_filters(qs, form)
 
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = (
@@ -357,21 +330,9 @@ def admin_data_export_pdf(request):
         messages.error(request, "PDF export is not available. Please install xhtml2pdf.")
         return redirect("admin_panel:data_list")
 
+    form = CrimeFilterForm(request.GET or None)
     qs = CrimeData.objects.all()
-    place = request.GET.get("place", "")
-    risk = request.GET.get("risk", "")
-    weekday = request.GET.get("weekday", "")
-    part = request.GET.get("part", "")
-
-    if place:
-        qs = qs.filter(incident_place__icontains=place)
-    if risk:
-        qs = qs.filter(risk_level=risk)
-    if weekday:
-        qs = qs.filter(incident_weekday=weekday)
-    if part:
-        qs = qs.filter(part_of_the_day=part)
-
+    qs = apply_filters(qs, form)
     qs = qs.order_by("-uploaded_at", "incident_place")
     records = list(qs[:500])
 
@@ -387,10 +348,10 @@ def admin_data_export_pdf(request):
         "records": records,
         "total": total,
         "by_risk": by_risk,
-        "place": place,
-        "risk": risk,
-        "weekday": weekday,
-        "part": part,
+        "place": request.GET.get("incident_place", ""),
+        "risk": request.GET.get("risk_level", ""),
+        "weekday": request.GET.get("incident_weekday", ""),
+        "part": request.GET.get("part_of_the_day", ""),
         "generated_at": now,
         "request": request,
     })

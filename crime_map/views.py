@@ -1,13 +1,20 @@
+import csv
 import math
-from datetime import date
+from datetime import date, datetime
 
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import get_template
 
 from .forms import CrimeFilterForm, PredictionForm
 from .models import CrimeData
+
+try:
+    from xhtml2pdf import pisa
+except ImportError:
+    pisa = None
 
 # ---------------------------------------------------------------------------
 # CSV import helpers
@@ -402,3 +409,72 @@ def public_data_list(request):
         "total_count": queryset.count(),
         "shown_count": len(page_obj.object_list),
     })
+
+
+def public_data_export(request):
+    """Export filtered crime records as CSV (public)."""
+    form = CrimeFilterForm(request.GET or None)
+    qs = CrimeData.objects.all()
+    qs = apply_filters(qs, form)
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = (
+        f'attachment; filename="crime_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    )
+    writer = csv.writer(response)
+    writer.writerow([
+        "incident_place", "incident_weekday", "part_of_the_day",
+        "latitude", "longitude", "crime_risk_score",
+        "murder_risk", "rape_risk", "kidnap_risk", "bodyfound_risk",
+        "robbery_risk", "assault_risk",
+        "total_crimes", "total_murders", "total_rapes", "total_kidnaps",
+        "total_bodyfounds", "total_robberys", "total_assaults",
+        "risk_level", "marker_radius", "dominant_crime",
+    ])
+    for obj in qs:
+        writer.writerow([
+            obj.incident_place, obj.incident_weekday, obj.part_of_the_day,
+            obj.latitude, obj.longitude, obj.crime_risk_score,
+            obj.murder_risk, obj.rape_risk, obj.kidnap_risk, obj.bodyfound_risk,
+            obj.robbery_risk, obj.assault_risk,
+            obj.total_crimes, obj.total_murders, obj.total_rapes, obj.total_kidnaps,
+            obj.total_bodyfounds, obj.total_robberys, obj.total_assaults,
+            obj.risk_level, obj.marker_radius, obj.dominant_crime,
+        ])
+    return response
+
+
+def public_data_export_pdf(request):
+    """Export filtered crime records as PDF report (public)."""
+    if pisa is None:
+        return HttpResponse("PDF export unavailable", status=501)
+
+    form = CrimeFilterForm(request.GET or None)
+    qs = CrimeData.objects.all()
+    qs = apply_filters(qs, form)
+    qs = qs.order_by("-uploaded_at", "incident_place")
+    records = list(qs[:500])
+
+    by_risk = {level: qs.filter(risk_level=level).count() for level, _ in CrimeData.RISK_LEVELS}
+    total = qs.count()
+    now = datetime.now()
+
+    template = get_template("crime_map/report_pdf.html")
+    html = template.render({
+        "records": records,
+        "total": total,
+        "by_risk": by_risk,
+        "place": request.GET.get("incident_place", ""),
+        "risk": request.GET.get("risk_level", ""),
+        "weekday": request.GET.get("incident_weekday", ""),
+        "part": request.GET.get("part_of_the_day", ""),
+        "generated_at": now,
+        "request": request,
+    })
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="crime_report_{now.strftime("%Y%m%d_%H%M%S")}.pdf"'
+    )
+    pisa.CreatePDF(html, dest=response)
+    return response

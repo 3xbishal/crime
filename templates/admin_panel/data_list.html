@@ -9,6 +9,9 @@
         <p class="text-muted mb-0">Total: <strong class="text-accent">{{ records.count }}</strong> records</p>
     </div>
     <div class="action-bar">
+        <a href="{% url 'crime_map:map' %}?{{ request.GET.urlencode }}" class="btn btn-secondary">
+            <i class="bi bi-map"></i> View Map
+        </a>
         <a href="{% url 'admin_panel:data_export' %}?{{ request.GET.urlencode }}" class="btn btn-secondary">
             <i class="bi bi-download"></i> Export CSV
         </a>
@@ -21,33 +24,50 @@
 <div class="card">
     <form method="get" class="row g-3" id="filter-form">
         <div class="col-md-3">
+            <label class="form-label">Start Date</label>
+            <input type="date" name="start_date" class="form-control" value="{{ form.start_date.value|default:'' }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">End Date</label>
+            <input type="date" name="end_date" class="form-control" value="{{ form.end_date.value|default:'' }}">
+        </div>
+        <div class="col-md-3">
             <label class="form-label">Place</label>
-            <input type="text" name="place" class="form-control" value="{{ place }}" placeholder="Search place...">
+            <input type="text" name="incident_place" class="form-control" value="{{ form.incident_place.value|default:'' }}" placeholder="Search place...">
         </div>
         <div class="col-md-3">
             <label class="form-label">Risk Level</label>
-            <select name="risk" class="form-control">
+            <select name="risk_level" class="form-control">
                 <option value="">All</option>
-                {% for level, _ in CrimeData.RISK_LEVELS %}
-                <option value="{{ level }}" {% if risk == level %}selected{% endif %}>{{ level }}</option>
+                {% for val, label in CrimeData.RISK_LEVELS %}
+                <option value="{{ val }}" {% if form.risk_level.value == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Dominant Crime</label>
+            <select name="dominant_crime" class="form-control">
+                <option value="">All</option>
+                {% for val, label in CrimeFilterForm.CRIME_TYPES %}
+                <option value="{{ val }}" {% if form.dominant_crime.value == val %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col-md-3">
             <label class="form-label">Weekday</label>
-            <select name="weekday" class="form-control">
+            <select name="incident_weekday" class="form-control">
                 <option value="">All</option>
                 {% for val, label in WEEKDAYS %}
-                <option value="{{ val }}" {% if weekday == val %}selected{% endif %}>{{ label }}</option>
+                <option value="{{ val }}" {% if form.incident_weekday.value == val %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col-md-3">
             <label class="form-label">Part of Day</label>
-            <select name="part" class="form-control">
+            <select name="part_of_the_day" class="form-control">
                 <option value="">All</option>
                 {% for val, label in PART_OF_DAY %}
-                <option value="{{ val }}" {% if part == val %}selected{% endif %}>{{ label }}</option>
+                <option value="{{ val }}" {% if form.part_of_the_day.value == val %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -73,6 +93,7 @@
                     <th>Dominant Crime</th>
                     <th>Total</th>
                     <th class="text-end">Actions</th>
+                    <th class="text-end">Map</th>
                 </tr>
             </thead>
             <tbody>
@@ -92,9 +113,14 @@
                             <a href="{% url 'admin_panel:data_delete' r.pk %}" class="text-danger" title="Delete"><i class="bi bi-trash"></i></a>
                         </div>
                     </td>
+                    <td class="text-end">
+                        <a href="https://www.google.com/maps?q={{ r.latitude }},{{ r.longitude }}" target="_blank" rel="noopener" class="text-accent" title="View on Google Maps">
+                            <i class="bi bi-map"></i>
+                        </a>
+                    </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr>
+                <tr><td colspan="9" class="text-center text-muted py-4">No records found.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -106,17 +132,17 @@
     <ul class="pagination">
         {% if records.has_previous %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ records.previous_page_number }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">Previous</a>
+            <a class="page-link" href="?page={{ records.previous_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.incident_place %}&incident_place={{ request.GET.incident_place }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.dominant_crime %}&dominant_crime={{ request.GET.dominant_crime }}{% endif %}{% if request.GET.incident_weekday %}&incident_weekday={{ request.GET.incident_weekday }}{% endif %}{% if request.GET.part_of_the_day %}&part_of_the_day={{ request.GET.part_of_the_day }}{% endif %}">Previous</a>
         </li>
         {% endif %}
         {% for i in records.paginator.page_range %}
         <li class="page-item {% if records.number == i %}active{% endif %}">
-            <a class="page-link" href="?page={{ i }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">{{ i }}</a>
+            <a class="page-link" href="?page={{ i }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.incident_place %}&incident_place={{ request.GET.incident_place }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.dominant_crime %}&dominant_crime={{ request.GET.dominant_crime }}{% endif %}{% if request.GET.incident_weekday %}&incident_weekday={{ request.GET.incident_weekday }}{% endif %}{% if request.GET.part_of_the_day %}&part_of_the_day={{ request.GET.part_of_the_day }}{% endif %}">{{ i }}</a>
         </li>
         {% endfor %}
         {% if records.has_next %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ records.next_page_number }}{% if request.GET.place %}&place={{ request.GET.place }}{% endif %}{% if request.GET.risk %}&risk={{ request.GET.risk }}{% endif %}{% if request.GET.weekday %}&weekday={{ request.GET.weekday }}{% endif %}{% if request.GET.part %}&part={{ request.GET.part }}{% endif %}">Next</a>
+            <a class="page-link" href="?page={{ records.next_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.incident_place %}&incident_place={{ request.GET.incident_place }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.dominant_crime %}&dominant_crime={{ request.GET.dominant_crime }}{% endif %}{% if request.GET.incident_weekday %}&incident_weekday={{ request.GET.incident_weekday }}{% endif %}{% if request.GET.part_of_the_day %}&part_of_the_day={{ request.GET.part_of_the_day }}{% endif %}">Next</a>
         </li>
         {% endif %}
     </ul>

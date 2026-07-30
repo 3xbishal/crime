@@ -78,6 +78,9 @@
         <div class="d-flex gap-2 flex-wrap">
             <button class="btn secondary" id="toggle-heatmap">Heatmap</button>
             <button class="btn secondary" id="toggle-clustering">Clustering</button>
+            <button class="btn secondary" id="toggle-fullscreen">
+                <i class="bi bi-arrows-fullscreen"></i> Fullscreen
+            </button>
             <a href="{% url 'crime_map:predict' %}" class="btn">Predict Crime</a>
         </div>
     </div>
@@ -109,6 +112,7 @@
     }
 
     function buildInfoContent(p) {
+        const googleMapsUrl = `https://www.google.com/maps?q=${p.latitude},${p.longitude}`;
         const crimeRows = [
             ["Murder", p.total_murders, p.murder_risk],
             ["Rape", p.total_rapes, p.rape_risk],
@@ -132,6 +136,9 @@
                     Total crimes: <strong>${p.total_crimes}</strong> &middot;
                     Score: <strong>${(p.crime_risk_score * 100).toFixed(1)}%</strong>
                 </div>
+                <a href="${googleMapsUrl}" target="_blank" rel="noopener" style="display:inline-block; margin-top:8px; color:#38bdf8; text-decoration:none; font-size:12px;">
+                    View on Google Maps <i class="bi bi-box-arrow-up-right" style="font-size:10px;"></i>
+                </a>
             </div>`;
     }
 
@@ -159,6 +166,15 @@
         document.getElementById("toggle-clustering").addEventListener("click", () => {
             useClustering = !useClustering;
             renderPoints();
+        });
+        document.getElementById("toggle-fullscreen").addEventListener("click", () => {
+            const mapEl = document.getElementById("map");
+            if (!mapEl) return;
+            if (!document.fullscreenElement) {
+                mapEl.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen();
+            }
         });
     }
 

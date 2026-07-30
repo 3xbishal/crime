@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crime Report</title>
+    {% load custom_filters %}
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; color: #1e293b; margin: 0; padding: 24px; }
+        h1 { font-size: 22px; color: #0f172a; margin-bottom: 4px; }
+        h2 { font-size: 14px; color: #334155; margin-bottom: 12px; font-weight: 600; }
+        .meta { color: #64748b; font-size: 11px; margin-bottom: 16px; }
+        .summary { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .summary-box { flex: 1 1 120px; background: #f1f5f9; border-radius: 8px; padding: 10px; text-align: center; border: 1px solid #e2e8f0; }
+        .summary-box .num { font-size: 20px; font-weight: 700; color: #0f172a; }
+        .summary-box .label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        th { background: #0f172a; color: #fff; font-size: 11px; padding: 8px; text-align: left; }
+        td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+        .badge.very-low { background: #dbeafe; color: #1e3a8a; }
+        .badge.low { background: #dcfce7; color: #14532d; }
+        .badge.moderate { background: #fef3c7; color: #713f12; }
+        .badge.high { background: #fee2e2; color: #7f1d1d; }
+        .badge.very-high { background: #ffe4e6; color: #4c0519; }
+        .filters { margin-bottom: 12px; font-size: 11px; color: #475569; }
+        .footer { margin-top: 24px; font-size: 10px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+        .section { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Crime Data Report</h1>
+    <div class="meta">Generated: {{ generated_at|date:"Y-m-d H:i" }} &middot; Total Records: {{ total }}</div>
+
+    {% if place or risk or weekday or part %}
+    <div class="filters">
+        <strong>Filters applied:</strong>
+        {% if place %}Place contains "{{ place }}" &middot;{% endif %}
+        {% if risk %}Risk level: {{ risk }}{% endif %}
+        {% if weekday %}Weekday: {{ weekday|title }}{% endif %}
+        {% if part %}Part of day: {{ part|title }}{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="summary">
+        <div class="summary-box">
+            <div class="num">{{ total }}</div>
+            <div class="label">Total Records</div>
+        </div>
+        {% for level, _ in by_risk.items %}
+        <div class="summary-box">
+            <div class="num">{{ by_risk|get_item:level }}</div>
+            <div class="label">{{ level }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if records %}
+    <div class="section">
+        <h2>Records Detail</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Place</th>
+                    <th>Weekday</th>
+                    <th>Part of Day</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Risk Level</th>
+                    <th>Risk Score</th>
+                    <th>Total Crimes</th>
+                    <th>Dominant Crime</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>{{ r.incident_place }}</td>
+                    <td>{{ r.incident_weekday|title }}</td>
+                    <td>{{ r.part_of_the_day|title }}</td>
+                    <td>{{ r.latitude }}</td>
+                    <td>{{ r.longitude }}</td>
+                    <td><span class="badge {{ r.risk_level|risk_class }}">{{ r.risk_level }}</span></td>
+                    <td>{{ r.crime_risk_score|floatformat:4 }}</td>
+                    <td>{{ r.total_crimes }}</td>
+                    <td>{{ r.dominant_crime|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="section">
+        <p style="color: #64748b;">No records found matching the current filters.</p>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        Crime Map Public Report
+    </div>
+</body>
+</html>
