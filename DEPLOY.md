@@ -4,14 +4,14 @@
 
 - cPanel hosting with **Passenger (mod_passenger)** enabled
 - Python 3.8+ available on the server
-- MySQL/MariaDB database (recommended) or SQLite
+- MySQL/MariaDB database
 - SSH access to your cPanel account (or at least File Manager access)
 
 ---
 
 ## Step 1: Upload Files
 
-1. Zip the project folder (exclude `venv/`, `db.sqlite3`, `__pycache__/`, `.git/`).
+1. Zip the project folder (exclude `venv/`, `__pycache__/`, `.git/`).
 2. Upload and extract the zip in your cPanel file manager, e.g. to:
    ```
    /home/username/crime/
@@ -82,10 +82,6 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 1. cPanel → **MySQL Databases** → Create a new database.
 2. Create a database user and add it to the database with **All Privileges**.
 3. Note the database name, username, and password.
-
-### Option B: Use SQLite (simpler, less performant)
-
-Skip the database creation. The app will fall back to SQLite automatically if no MySQL environment variables are set.
 
 ---
 
