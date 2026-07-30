@@ -4,49 +4,324 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 <style>
-    #map { height: 65vh; width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #f8f9fa; }
-    .filter-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
-    .filter-bar .field { margin-bottom: 0; min-width: 130px; flex: 1 1 130px; }
-    .legend {
-        background: var(--surface-2);
-        padding: 0.85rem 1.1rem;
+    /* ── Map Container ── */
+    #map-container {
+        position: relative;
+        width: 100%;
+        height: 65vh;
         border-radius: var(--radius-sm);
-        margin-top: 0.85rem;
-        display: flex;
-        gap: 1.1rem;
-        flex-wrap: wrap;
+        overflow: hidden;
         border: 1px solid var(--border);
+        background: #f0f2f5;
+        transition: all 0.3s ease;
     }
-    .legend .item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-2); font-weight: 500; }
-    .legend .swatch { width: 14px; height: 14px; border-radius: 50%; background: #000; }
-    .map-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.6rem; }
-    .leaflet-popup-content { font-family: var(--font); }
-    .leaflet-popup-content table { width: 100%; font-size: 12px; border-collapse: collapse; }
-    .leaflet-popup-content th { text-align: left; color: #666; }
-    .leaflet-popup-content .badge { font-size: 0.7rem; background: var(--surface-3); color: #000; border: 1px solid var(--border); }
-    .leaflet-popup-content .crime-row { display: flex; justify-content: space-between; padding: 1px 0; }
-    .leaflet-popup-content .crime-name { color: #666; }
-    .leaflet-popup-content .crime-val { color: #000; font-weight: 600; }
-    .map-marker-icon { background: transparent; border: none; }
-    .marker-cluster { background: transparent; border: none; }
+    #map {
+        width: 100%;
+        height: 100%;
+        background: #f0f2f5;
+    }
+    #map-container.is-fullscreen {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999 !important;
+        border-radius: 0 !important;
+        border: none !important;
+    }
+    @media (max-width: 768px) {
+        #map-container { height: 50vh; }
+    }
+
+    /* ── Map Toolbar ── */
+    .map-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .map-toolbar .stats {
+        font-size: 0.9rem;
+        color: var(--text-3);
+        font-weight: 500;
+    }
+    .map-toolbar .stats strong { color: var(--text-2); }
+    .map-toolbar-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .map-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-2);
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: var(--font);
+        white-space: nowrap;
+    }
+    .map-btn:hover {
+        background: var(--surface-2);
+        border-color: var(--border-2);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .map-btn:active { transform: scale(0.97); }
+    .map-btn.is-active {
+        background: #000;
+        color: #fff;
+        border-color: #000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .map-btn.is-active:hover {
+        background: #222;
+        border-color: #222;
+    }
+    .map-btn i { font-size: 0.9rem; }
+
+    /* ── Risk Legend ── */
+    .risk-legend {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 0.7rem 1rem;
+        background: var(--surface-2);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        margin-top: 0.75rem;
+    }
+    .risk-legend .item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-2);
+    }
+    .risk-legend .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    /* ── Heatmap Legend ── */
     .heatmap-legend {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        margin-top: 0.85rem;
-        padding: 0.5rem 0;
+        gap: 0.6rem;
+        margin-top: 0.75rem;
+        padding: 0.3rem 0;
+    }
+    .heatmap-legend .label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-3);
     }
     .heatmap-legend .gradient-bar {
-        width: 200px;
-        height: 12px;
-        border-radius: 6px;
+        flex: 1;
+        max-width: 220px;
+        height: 10px;
+        border-radius: 5px;
         background: linear-gradient(to right, #3b82f6, #22c55e, #eab308, #f97316, #ef4444);
     }
-    .heatmap-legend .label { font-size: 0.75rem; color: var(--text-2); }
-    @media (max-width: 768px) {
-        #map { height: 50vh; }
+
+    /* ── Leaflet Overrides ── */
+    .leaflet-popup-content-wrapper {
+        border-radius: 12px !important;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
+        padding: 0 !important;
+        overflow: hidden;
     }
+    .leaflet-popup-content {
+        margin: 0 !important;
+        font-family: var(--font);
+        min-width: 240px;
+    }
+    .leaflet-popup-content .popup-header {
+        background: #000;
+        color: #fff;
+        padding: 12px 16px;
+    }
+    .leaflet-popup-content .popup-header h4 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    .leaflet-popup-content .popup-header .meta {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-top: 2px;
+    }
+    .leaflet-popup-content .popup-body {
+        padding: 12px 16px;
+    }
+    .leaflet-popup-content .popup-body .risk-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .leaflet-popup-content .popup-body .risk-badge.very-low { background: #dbeafe; color: #1e40af; }
+    .leaflet-popup-content .popup-body .risk-badge.low { background: #dcfce7; color: #166534; }
+    .leaflet-popup-content .popup-body .risk-badge.moderate { background: #fef9c3; color: #854d0e; }
+    .leaflet-popup-content .popup-body .risk-badge.high { background: #fed7aa; color: #9a3412; }
+    .leaflet-popup-content .popup-body .risk-badge.very-high { background: #fecaca; color: #991b1b; }
+    .leaflet-popup-content .popup-body .crime-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 12px;
+        margin-top: 10px;
+    }
+    .leaflet-popup-content .popup-body .crime-grid .crime-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.78rem;
+        padding: 2px 0;
+    }
+    .leaflet-popup-content .popup-body .crime-grid .crime-item .name {
+        color: #666;
+    }
+    .leaflet-popup-content .popup-body .crime-grid .crime-item .val {
+        color: #000;
+        font-weight: 600;
+    }
+    .leaflet-popup-content .popup-body .popup-footer {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+    }
+    .leaflet-popup-content .popup-footer .score {
+        font-weight: 700;
+        color: #000;
+    }
+    .leaflet-popup-content .popup-footer .gmap-link {
+        color: #000;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        transition: opacity 0.2s;
+    }
+    .leaflet-popup-content .popup-footer .gmap-link:hover { opacity: 0.6; }
+    .leaflet-popup-close-button {
+        color: #fff !important;
+        opacity: 0.7 !important;
+        top: 8px !important;
+        right: 8px !important;
+    }
+    .leaflet-popup-close-button:hover { opacity: 1 !important; }
+
+    /* ── Marker Icons ── */
+    .map-marker-icon {
+        background: transparent !important;
+        border: none !important;
+    }
+
+    /* ── Cluster Overrides ── */
+    .marker-cluster { background: transparent; border: none; }
+
+    /* ── Filter Bar ── */
+    .filter-bar {
+        display: flex;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+    .filter-bar .field {
+        margin-bottom: 0;
+        min-width: 120px;
+        flex: 1 1 120px;
+    }
+    .filter-bar .field label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-weight: 600;
+        color: var(--text-3);
+        margin-bottom: 4px;
+        display: block;
+    }
+    .filter-bar .field input,
+    .filter-bar .field select {
+        width: 100%;
+        padding: 0.6rem 0.8rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        font-size: 0.85rem;
+        font-family: var(--font);
+        color: var(--text-2);
+        transition: all 0.2s ease;
+    }
+    .filter-bar .field input:focus,
+    .filter-bar .field select:focus {
+        outline: none;
+        border-color: #000;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+    }
+    .filter-bar .field select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.8rem center;
+        padding-right: 2rem;
+    }
+    .filter-bar .actions {
+        display: flex;
+        gap: 0.5rem;
+        flex: 0 0 auto;
+        align-items: flex-end;
+    }
+
+    /* ── Fullscreen Close Button ── */
+    .fs-close-btn {
+        display: none;
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 10000;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.8);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2rem;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .fs-close-btn:hover {
+        background: #000;
+        transform: scale(1.05);
+    }
+    .fs-close-btn.is-visible { display: flex; }
 </style>
 {% endblock %}
 
@@ -56,7 +331,8 @@
     <p>Interactive crime density visualization — warmer colors indicate higher crime concentration</p>
 </div>
 
-<div class="card">
+<!-- Filters -->
+<div class="card" style="padding: 1.25rem;">
     <form method="get" class="filter-bar">
         <div class="field">
             <label>Place</label>
@@ -82,13 +358,13 @@
             <label>Min risk score</label>
             {{ form.min_risk_score }}
         </div>
-        <div class="field" style="flex: 0 0 auto;">
+        <div class="actions">
             <button type="submit" class="btn">Filter</button>
             <a class="btn secondary" href="{% url 'crime_map:map' %}">Reset</a>
         </div>
     </form>
 
-    <div class="legend">
+    <div class="risk-legend">
         <div class="item"><span class="swatch" style="background:#3b82f6;"></span> Very Low</div>
         <div class="item"><span class="swatch" style="background:#22c55e;"></span> Low</div>
         <div class="item"><span class="swatch" style="background:#eab308;"></span> Moderate</div>
@@ -97,31 +373,49 @@
     </div>
 </div>
 
-<div class="card">
-    <div class="map-info">
-        <div>
-            Showing <strong>{{ shown_count }}</strong> of <strong>{{ total_count }}</strong> records.
-            {% if shown_count == 0 %}
-                <span class="help">No data matches the current filters{% if total_count == 0 %} — upload a CSV first{% endif %}.</span>
-            {% endif %}
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-sm active" id="toggle-heatmap">Heatmap</button>
-            <button class="btn secondary btn-sm" id="toggle-clustering">Clusters</button>
-            <button class="btn secondary btn-sm" id="toggle-fullscreen">
-                <i class="bi bi-arrows-fullscreen"></i> Fullscreen
-            </button>
+<!-- Map Card -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: 1.25rem 1.25rem 0 1.25rem;">
+        <div class="map-toolbar">
+            <div class="stats">
+                Showing <strong>{{ shown_count }}</strong> of <strong>{{ total_count }}</strong> records
+                {% if shown_count == 0 %}
+                    <span style="color: var(--text-3); font-weight: 400;">
+                        {% if total_count == 0 %}— upload a CSV first{% else %}— no matches{% endif %}
+                    </span>
+                {% endif %}
+            </div>
+            <div class="map-toolbar-actions">
+                <button class="map-btn is-active" id="toggle-heatmap">
+                    <i class="bi bi-fire"></i> Heatmap
+                </button>
+                <button class="map-btn" id="toggle-clustering">
+                    <i class="bi bi-diagram-3"></i> Clusters
+                </button>
+                <button class="map-btn" id="toggle-fullscreen">
+                    <i class="bi bi-arrows-fullscreen"></i> Fullscreen
+                </button>
+            </div>
         </div>
     </div>
 
-    <div id="map"></div>
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
 
-    <div class="heatmap-legend">
-        <span class="label">Low</span>
-        <div class="gradient-bar"></div>
-        <span class="label">High</span>
+    <div style="padding: 0.75rem 1.25rem 1.25rem 1.25rem;">
+        <div class="heatmap-legend">
+            <span class="label">Low</span>
+            <div class="gradient-bar"></div>
+            <span class="label">High</span>
+        </div>
     </div>
 </div>
+
+<!-- Fullscreen exit button (shown only in fullscreen) -->
+<button class="fs-close-btn" id="fs-close-btn" title="Exit Fullscreen (Esc)">
+    <i class="bi bi-fullscreen-exit"></i>
+</button>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -129,12 +423,19 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.9.3/dist/leaflet-heat.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 <script>
-    const POINTS = JSON.parse(document.getElementById("crime-points-data").textContent);
+document.addEventListener('DOMContentLoaded', function () {
+    'use strict';
 
-    const RISK_COLORS = {
+    if (typeof L === 'undefined') return;
+
+    // ── Data ──
+    var POINTS = [];
+    try {
+        POINTS = JSON.parse(document.getElementById('crime-points-data').textContent);
+    } catch(e) {}
+
+    var RISK_COLORS = {
         "Very Low": "#3b82f6",
         "Low": "#22c55e",
         "Moderate": "#eab308",
@@ -142,7 +443,7 @@
         "Very High": "#ef4444",
     };
 
-    const HEAT_GRADIENT = {
+    var HEAT_GRADIENT = {
         0.0: '#3b82f6',
         0.2: '#22c55e',
         0.4: '#eab308',
@@ -151,110 +452,76 @@
         1.0: '#7f1d1d',
     };
 
+    // ── DOM refs ──
+    var mapEl = document.getElementById('map');
+    var containerEl = document.getElementById('map-container');
+    var heatBtn = document.getElementById('toggle-heatmap');
+    var clusterBtn = document.getElementById('toggle-clustering');
+    var fsBtn = document.getElementById('toggle-fullscreen');
+    var fsCloseBtn = document.getElementById('fs-close-btn');
+
+    if (!mapEl || !containerEl || !heatBtn || !clusterBtn || !fsBtn) return;
+
+    // ── State ──
+    var map = null;
+    var markers = [];
+    var heatmapLayer = null;
+    var useClustering = false;
+    var markerClusterer = null;
+    var isFullscreen = false;
+
+    // ── Helpers ──
     function riskClass(level) {
         return (level || "").toLowerCase().replace(/\s+/g, "-");
     }
 
     function buildInfoContent(p) {
-        const googleMapsUrl = `https://www.google.com/maps?q=${p.latitude},${p.longitude}`;
-        const crimeRows = [
-            ["Murder", p.total_murders, p.murder_risk],
-            ["Rape", p.total_rapes, p.rape_risk],
-            ["Kidnap", p.total_kidnaps, p.kidnap_risk],
-            ["Body found", p.total_bodyfounds, p.bodyfound_risk],
-            ["Robbery", p.total_robberys, p.robbery_risk],
-            ["Assault", p.total_assaults, p.assault_risk],
+        var googleMapsUrl = 'https://www.google.com/maps?q=' + p.latitude + ',' + p.longitude;
+
+        // Calculate risk percentages from total counts (the view only provides total counts)
+        var total = p.total_crimes || 1;
+        var crimeRows = [
+            ['Murder', p.total_murders || 0],
+            ['Rape', p.total_rapes || 0],
+            ['Kidnap', p.total_kidnaps || 0],
+            ['Body found', p.total_bodyfounds || 0],
+            ['Robbery', p.total_robberys || 0],
+            ['Assault', p.total_assaults || 0],
         ];
-        const rows = crimeRows.map(([name, count, risk]) =>
-            `<div class="crime-row"><span class="crime-name">${name}</span><span class="crime-val">${count} (${(risk * 100).toFixed(1)}%)</span></div>`
-        ).join("");
-        return `
-            <div style="min-width:220px; font-family:var(--font); background: #fff; color: #000; padding: 10px; border-radius: 8px;">
-                <strong>${p.incident_place}</strong><br>
-                <span style="color:#666;">${p.incident_weekday} &middot; ${p.part_of_the_day}</span><br>
-                <span class="badge ${riskClass(p.risk_level)}" style="margin-top:4px;">${p.risk_level}</span>
-                <span style="margin-left:6px; color:#666;">dominant: ${p.dominant_crime.replace("_risk","")}</span>
-                <hr style="margin:8px 0; border-color:#dee2e6;">
-                ${rows}
-                <div style="margin-top:6px; color:#666;">
-                    Total crimes: <strong>${p.total_crimes}</strong> &middot;
-                    Score: <strong>${(p.crime_risk_score * 100).toFixed(1)}%</strong>
-                </div>
-                <a href="${googleMapsUrl}" target="_blank" rel="noopener" style="display:inline-block; margin-top:8px; color:#000; text-decoration:none; font-size:12px;">
-                    View on Google Maps <i class="bi bi-box-arrow-up-right" style="font-size:10px;"></i>
-                </a>
-            </div>`;
+        var rows = crimeRows.map(function(row) {
+            var name = row[0], count = row[1];
+            var pct = ((count / total) * 100).toFixed(1);
+            return '<div class="crime-item"><span class="name">' + name + '</span><span class="val">' + count + ' (' + pct + '%)</span></div>';
+        }).join('');
+
+        var domCrime = (p.dominant_crime || '').replace('_risk', '');
+        var score = ((p.crime_risk_score || 0) * 100).toFixed(1);
+
+        return '' +
+            '<div class="popup-header">' +
+                '<h4>' + p.incident_place + '</h4>' +
+                '<div class="meta">' + p.incident_weekday + ' &middot; ' + p.part_of_the_day + '</div>' +
+            '</div>' +
+            '<div class="popup-body">' +
+                '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+                    '<span class="risk-badge ' + riskClass(p.risk_level) + '">' + p.risk_level + '</span>' +
+                    '<span style="font-size:0.75rem;color:#666;">dominant: ' + domCrime + '</span>' +
+                '</div>' +
+                '<div class="crime-grid">' + rows + '</div>' +
+                '<div class="popup-footer">' +
+                    '<span class="score">Score: ' + score + '% &middot; Total: ' + (p.total_crimes || 0) + '</span>' +
+                    '<a href="' + googleMapsUrl + '" target="_blank" rel="noopener" class="gmap-link">Google Maps <i class="bi bi-box-arrow-up-right"></i></a>' +
+                '</div>' +
+            '</div>';
     }
 
-    let map, markers = [], heatmapLayer = null, useClustering = false;
-    let markerClusterer = null;
-    const heatBtn = document.getElementById("toggle-heatmap");
-    const clusterBtn = document.getElementById("toggle-clustering");
-
-    function setActiveMode(mode) {
-        useClustering = mode === "cluster";
-        if (useClustering) {
-            clusterBtn.classList.add("active");
-            clusterBtn.classList.remove("secondary");
-            heatBtn.classList.remove("active");
-            heatBtn.classList.add("secondary");
-        } else {
-            heatBtn.classList.add("active");
-            heatBtn.classList.remove("secondary");
-            clusterBtn.classList.remove("active");
-            clusterBtn.classList.add("secondary");
-        }
-        renderPoints();
-    }
-
-    function initMap() {
-        const center = POINTS.length
-            ? { lat: POINTS[0].latitude, lng: POINTS[0].longitude }
-            : { lat: 23.685, lng: 90.3563 };
-
-        map = L.map('map', { scrollWheelZoom: false }).setView([center.lat, center.lng], POINTS.length ? 8 : 7);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 18,
-        }).addTo(map);
-
-        renderPoints();
-
-        heatBtn.addEventListener("click", () => setActiveMode("heat"));
-        clusterBtn.addEventListener("click", () => setActiveMode("cluster"));
-        document.getElementById("toggle-fullscreen").addEventListener("click", () => {
-            const mapEl = document.getElementById("map");
-            if (!mapEl) return;
-            if (!document.fullscreenElement) {
-                mapEl.requestFullscreen().catch(() => {});
-            } else {
-                document.exitFullscreen();
-            }
-        });
-    }
-
-    function clearOverlays() {
-        if (markerClusterer) {
-            markerClusterer.clearLayers();
-            markerClusterer = null;
-        }
-        markers.forEach(m => map.removeLayer(m));
-        markers = [];
-        if (heatmapLayer) {
-            map.removeLayer(heatmapLayer);
-            heatmapLayer = null;
-        }
-    }
-
+    // ── Marker Icon ──
     function createMarkerIcon(color) {
-        const size = 28;
-        const svg = `
-            <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="9" fill="${color}" stroke="white" stroke-width="2.5"/>
-                <circle cx="12" cy="12" r="4" fill="white"/>
-            </svg>
-        `;
+        var size = 28;
+        var svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">' +
+            '<circle cx="14" cy="14" r="11" fill="' + color + '" stroke="white" stroke-width="2.5"/>' +
+            '<circle cx="14" cy="14" r="5" fill="white" opacity="0.9"/>' +
+        '</svg>';
         return L.divIcon({
             html: svg,
             className: 'map-marker-icon',
@@ -264,82 +531,220 @@
         });
     }
 
+    // ── Clear Overlays ──
+    function clearOverlays() {
+        if (markerClusterer) {
+            markerClusterer.clearLayers();
+            map.removeLayer(markerClusterer);
+            markerClusterer = null;
+        }
+        for (var i = 0; i < markers.length; i++) {
+            map.removeLayer(markers[i]);
+        }
+        markers = [];
+        if (heatmapLayer) {
+            map.removeLayer(heatmapLayer);
+            heatmapLayer = null;
+        }
+    }
+
+    // ── Render Points ──
     function renderPoints() {
         clearOverlays();
         if (!POINTS.length) return;
 
-        const bounds = L.latLngBounds([]);
-        const markerGroup = L.layerGroup();
+        var bounds = L.latLngBounds([]);
+        var markerGroup = L.layerGroup();
 
-        POINTS.forEach(p => {
-            const color = RISK_COLORS[p.risk_level] || "#888888";
-
-            const marker = L.marker([p.latitude, p.longitude], {
+        for (var i = 0; i < POINTS.length; i++) {
+            var p = POINTS[i];
+            var color = RISK_COLORS[p.risk_level] || "#888";
+            var marker = L.marker([p.latitude, p.longitude], {
                 icon: createMarkerIcon(color),
                 riseOnHover: true,
             });
-            marker.bindPopup(buildInfoContent(p));
+            marker.bindPopup(buildInfoContent(p), {
+                maxWidth: 320,
+                className: 'crime-popup',
+            });
             marker.addTo(markerGroup);
             markers.push(marker);
             bounds.extend([p.latitude, p.longitude]);
-        });
+        }
 
         if (useClustering) {
             markerClusterer = L.markerClusterGroup({
                 chunkedLoading: true,
-                maxClusterRadius: 50,
+                maxClusterRadius: 55,
                 spiderfyOnMaxZoom: true,
                 showCoverageOnHover: false,
+                disableClusteringAtZoom: 16,
                 iconCreateFunction: function(cluster) {
-                    const count = cluster.getChildCount();
-                    let size = count < 10 ? 'small' : count < 50 ? 'medium' : 'large';
-                    let dims = { small: 40, medium: 48, large: 56 };
-                    let fontSize = { small: 12, medium: 14, large: 16 };
+                    var count = cluster.getChildCount();
+                    var size = count < 10 ? 40 : count < 50 ? 48 : 56;
+                    var fontSize = count < 10 ? 12 : count < 50 ? 14 : 16;
+                    var color = count < 10 ? '#3b82f6' : count < 50 ? '#f97316' : '#ef4444';
                     return L.divIcon({
-                        html: `<div style="
-                            width:${dims[size]}px;
-                            height:${dims[size]}px;
-                            background:#000;
-                            color:#fff;
-                            border-radius:50%;
-                            display:flex;
-                            align-items:center;
-                            justify-content:center;
-                            font-weight:700;
-                            font-size:${fontSize[size]}px;
-                            border:3px solid #fff;
-                            box-shadow:0 2px 8px rgba(0,0,0,0.25);
-                        ">${count}</div>`,
+                        html: '<div style="' +
+                            'width:' + size + 'px;' +
+                            'height:' + size + 'px;' +
+                            'background:' + color + ';' +
+                            'color:#fff;' +
+                            'border-radius:50%;' +
+                            'display:flex;' +
+                            'align-items:center;' +
+                            'justify-content:center;' +
+                            'font-weight:700;' +
+                            'font-size:' + fontSize + 'px;' +
+                            'font-family:system-ui,-apple-system,sans-serif;' +
+                            'border:3px solid #fff;' +
+                            'box-shadow:0 3px 12px rgba(0,0,0,0.3);' +
+                        '">' + count + '</div>',
                         className: 'marker-cluster',
-                        iconSize: L.point(dims[size], dims[size]),
+                        iconSize: L.point(size, size),
                     });
                 },
             });
             markerClusterer.addLayer(markerGroup);
-            markerClusterer.addTo(map);
+            map.addLayer(markerClusterer);
         } else {
             markerGroup.addTo(map);
-            const maxScore = Math.max(0.01, ...POINTS.map(p => p.crime_risk_score || 0));
-            const heatData = POINTS.map(p => [p.latitude, p.longitude, ((p.crime_risk_score || 0) / maxScore)]);
+            var maxScore = 0.01;
+            for (var j = 0; j < POINTS.length; j++) {
+                if (POINTS[j].crime_risk_score > maxScore) maxScore = POINTS[j].crime_risk_score;
+            }
+            var heatData = [];
+            for (var k = 0; k < POINTS.length; k++) {
+                heatData.push([POINTS[k].latitude, POINTS[k].longitude, (POINTS[k].crime_risk_score || 0) / maxScore]);
+            }
             heatmapLayer = L.heatLayer(heatData, {
-                radius: 32,
-                blur: 22,
+                radius: 30,
+                blur: 20,
                 maxZoom: 17,
                 max: 1.0,
                 gradient: HEAT_GRADIENT,
             });
-            heatmapLayer.addTo(map);
+            map.addLayer(heatmapLayer);
         }
 
-        if (!useClustering) {
-            map.fitBounds(bounds, { padding: [40, 40] });
+        // Always fit bounds, but with more padding for clusters
+        var padding = useClustering ? 60 : 40;
+        map.fitBounds(bounds, { padding: [padding, padding] });
+    }
+
+    // ── Mode Switching ──
+    function setActiveMode(mode) {
+        useClustering = (mode === 'cluster');
+        if (useClustering) {
+            heatBtn.classList.remove('is-active');
+            clusterBtn.classList.add('is-active');
+        } else {
+            heatBtn.classList.add('is-active');
+            clusterBtn.classList.remove('is-active');
+        }
+        renderPoints();
+        // Invalidate size after re-rendering to ensure proper layout
+        if (map) setTimeout(function() { map.invalidateSize(); }, 50);
+    }
+
+    // ── Fullscreen ──
+    function enterFullscreen() {
+        if (containerEl.requestFullscreen) {
+            containerEl.requestFullscreen().catch(function(){});
+        } else if (containerEl.webkitRequestFullscreen) {
+            containerEl.webkitRequestFullscreen();
+        } else if (containerEl.msRequestFullscreen) {
+            containerEl.msRequestFullscreen();
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        if (typeof L !== 'undefined') {
-            initMap();
+    function exitFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen().catch(function(){});
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
         }
-    });
+    }
+
+    function handleFullscreenChange() {
+        var fs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+        isFullscreen = fs;
+
+        // Safely toggle UI
+        if (containerEl) containerEl.classList.toggle('is-fullscreen', fs);
+        if (fsCloseBtn) fsCloseBtn.classList.toggle('is-visible', fs);
+        if (fsBtn) {
+            fsBtn.innerHTML = fs
+                ? '<i class="bi bi-fullscreen-exit"></i> Exit'
+                : '<i class="bi bi-arrows-fullscreen"></i> Fullscreen';
+        }
+
+        // Invalidate map size multiple times to ensure proper rendering
+        if (map) {
+            setTimeout(function() { map.invalidateSize(); }, 100);
+            setTimeout(function() { map.invalidateSize(); }, 300);
+            setTimeout(function() { map.invalidateSize(); }, 600);
+        }
+    }
+
+    // ── Bind Events ──
+    function bindEvents() {
+        heatBtn.addEventListener('click', function() { setActiveMode('heat'); });
+        clusterBtn.addEventListener('click', function() { setActiveMode('cluster'); });
+
+        fsBtn.addEventListener('click', function() {
+            if (isFullscreen) {
+                exitFullscreen();
+            } else {
+                enterFullscreen();
+            }
+        });
+
+        fsCloseBtn.addEventListener('click', function() {
+            exitFullscreen();
+        });
+
+        // Fullscreen change events (cross-browser)
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+        // Also listen on the container element directly
+        containerEl.addEventListener('fullscreenchange', handleFullscreenChange);
+
+        // Window resize handler
+        window.addEventListener('resize', function() {
+            if (map) map.invalidateSize();
+        });
+    }
+
+    // ── Initialize Map ──
+    function initMap() {
+        var center = POINTS.length
+            ? { lat: POINTS[0].latitude, lng: POINTS[0].longitude }
+            : { lat: 23.685, lng: 90.3563 };
+
+        map = L.map('map', {
+            scrollWheelZoom: false,
+            zoomControl: true,
+        }).setView([center.lat, center.lng], POINTS.length ? 8 : 7);
+
+        // CartoDB Positron — clean, modern tile layer
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
+        }).addTo(map);
+
+        renderPoints();
+        bindEvents();
+    }
+
+    // ── Start ──
+    initMap();
+});
 </script>
 {% endblock %}
