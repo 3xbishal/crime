@@ -73,11 +73,11 @@
     </form>
 
     <div class="legend">
-        <div class="item"><span class="swatch" style="background:#fff; border: 1px solid #ccc;"></span> Very Low</div>
-        <div class="item"><span class="swatch" style="background:#e0e0e0;"></span> Low</div>
-        <div class="item"><span class="swatch" style="background:#999;"></span> Moderate</div>
-        <div class="item"><span class="swatch" style="background:#555;"></span> High</div>
-        <div class="item"><span class="swatch" style="background:#000;"></span> Very High</div>
+        <div class="item"><span class="swatch" style="background:#f0f0f0; border: 1px solid #ccc;"></span> Very Low</div>
+        <div class="item"><span class="swatch" style="background:#d4d4d4;"></span> Low</div>
+        <div class="item"><span class="swatch" style="background:#a3a3a3;"></span> Moderate</div>
+        <div class="item"><span class="swatch" style="background:#737373;"></span> High</div>
+        <div class="item"><span class="swatch" style="background:#404040;"></span> Very High</div>
     </div>
 </div>
 
@@ -114,11 +114,11 @@
     const POINTS = JSON.parse(document.getElementById("crime-points-data").textContent);
 
     const RISK_COLORS = {
-        "Very Low": "#ffffff",
-        "Low": "#cccccc",
-        "Moderate": "#888888",
-        "High": "#555555",
-        "Very High": "#000000",
+        "Very Low": "#f0f0f0",
+        "Low": "#d4d4d4",
+        "Moderate": "#a3a3a3",
+        "High": "#737373",
+        "Very High": "#404040",
     };
 
     function riskClass(level) {
@@ -217,7 +217,7 @@
                 radius: 25,
                 blur: 15,
                 maxZoom: 17,
-                gradient: { 0.2: '#ffffff', 0.4: '#cccccc', 0.6: '#888888', 0.8: '#555555', 1.0: '#000000' },
+                gradient: { 0.2: '#f0f0f0', 0.4: '#d4d4d4', 0.6: '#a3a3a3', 0.8: '#737373', 1.0: '#404040' },
             });
             heatmapLayer.addTo(map);
             return;
@@ -237,7 +237,7 @@
                 color: color,
                 weight: 1,
                 fillColor: color,
-                fillOpacity: 0.25,
+                fillOpacity: 0.15,
                 radius: radius,
             });
             circle.addTo(map);
@@ -246,9 +246,9 @@
             const marker = L.circleMarker([p.latitude, p.longitude], {
                 radius: 6,
                 fillColor: color,
-                color: "#000000",
-                weight: 1,
-                fillOpacity: 1,
+                color: "#ffffff",
+                weight: 1.5,
+                fillOpacity: 0.9,
             });
             marker.bindPopup(buildInfoContent(p));
             marker.addTo(map);
