@@ -455,8 +455,6 @@
             }
         }
         
-        footer { text-align: center; color: var(--text-3); padding: 1.5rem; font-size: 0.8rem; margin-top: 1rem; position: relative; z-index: 1; }
-        
         /* Mobile Toggle */
         .mobile-toggle {
             display: none;
@@ -476,6 +474,77 @@
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1035; display: none;
         }
         .sidebar-overlay.show { display: block; }
+        
+        /* Action bar (used on several admin pages) */
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            align-items: center;
+        }
+        
+        /* Sidebar open state (mobile) */
+        .sidebar.show { transform: translateX(0); }
+        
+        /* Mobile responsive */
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 4px 0 30px rgba(0,0,0,0.12);
+                -webkit-overflow-scrolling: touch;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .mobile-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 0.6rem;
+            }
+            .topbar {
+                padding: 0.7rem 1rem;
+            }
+            .content-wrapper {
+                padding: 1.25rem;
+            }
+            .page-header h2 {
+                font-size: 1.35rem;
+            }
+            .stat-card .num {
+                font-size: 1.6rem;
+            }
+        }
+        
+        @media (max-width: 575.98px) {
+            .topbar-title {
+                display: none;
+            }
+            .user-badge {
+                display: none;
+            }
+            .content-wrapper {
+                padding: 1rem;
+            }
+            .page-header h2 {
+                font-size: 1.15rem;
+            }
+            .card {
+                padding: 1.1rem;
+            }
+            .stat-card {
+                padding: 1rem;
+            }
+            .stat-card .num {
+                font-size: 1.4rem;
+            }
+            .topbar-user {
+                font-size: 0.85rem !important;
+            }
+        }
+        
+        footer { text-align: center; color: var(--text-3); padding: 1.5rem; font-size: 0.8rem; margin-top: 1rem; position: relative; z-index: 1; }
         
         /* Animations */
         @keyframes fadeInUp {
@@ -544,15 +613,15 @@
 
     <div class="main-content">
         <div class="topbar" id="topbar">
-            <span style="display: flex; align-items: center;">
+            <span class="topbar-left" style="display: flex; align-items: center;">
                 <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
                     <i class="bi bi-list"></i>
                 </button>
-                <span style="color: var(--text-3); font-weight: 600; font-size: 0.95rem;">Crime Map Admin</span>
+                <span class="topbar-title" style="color: var(--text-3); font-weight: 600; font-size: 0.95rem;">Crime Map Admin</span>
             </span>
-            <span style="color: var(--text-3); font-size: 0.9rem;">
-                <i class="bi bi-person-circle"></i> <strong style="color: #000;">{{ request.user.username }}</strong>
-                <span class="badge" style="background: var(--surface-2); color: #000; border: 1px solid var(--border); margin-left: 0.5rem;">Staff</span>
+            <span class="topbar-user" style="color: var(--text-3); font-size: 0.9rem;">
+                <i class="bi bi-person-circle"></i> <strong class="user-name" style="color: #000;">{{ request.user.username }}</strong>
+                <span class="badge user-badge" style="background: var(--surface-2); color: #000; border: 1px solid var(--border); margin-left: 0.5rem;">Staff</span>
             </span>
         </div>
 

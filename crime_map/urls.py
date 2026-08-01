@@ -11,6 +11,4 @@ urlpatterns = [
     path("predict/", views.predict_view, name="predict"),
     path("api/predict/", views.predict_api, name="api_predict"),
     path("data/", views.public_data_list, name="public_data_list"),
-    path("data/export/", views.public_data_export, name="public_data_export"),
-    path("data/export/pdf/", views.public_data_export_pdf, name="public_data_export_pdf"),
 ]

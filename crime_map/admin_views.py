@@ -22,19 +22,14 @@ from django.db import transaction
 from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import get_template
 from django.views.decorators.http import require_http_methods
 
 from .forms import CSVUploadForm, CrimeDataForm, CrimeFilterForm
 from .models import CrimeData, CSVUpload
+from .pdf_utils import render_pdf_response
 
 # Re-use the column-mapping helpers from views.py
 from .views import COLUMN_MAP, INT_FIELDS, FLOAT_FIELDS, _coerce, apply_filters
-
-try:
-    from xhtml2pdf import pisa
-except ImportError:
-    pisa = None
 
 
 # ---------------------------------------------------------------------------
@@ -327,10 +322,6 @@ def admin_data_export(request):
 @admin_required
 def admin_data_export_pdf(request):
     """Export filtered crime records as a PDF report."""
-    if pisa is None:
-        messages.error(request, "PDF export is not available. Please install xhtml2pdf.")
-        return redirect("admin_panel:data_list")
-
     form = CrimeFilterForm(request.GET or None)
     qs = CrimeData.objects.all()
     qs = apply_filters(qs, form)
@@ -344,24 +335,25 @@ def admin_data_export_pdf(request):
     total = qs.count()
     now = datetime.now()
 
-    template = get_template("admin_panel/report_pdf.html")
-    html = template.render({
-        "records": records,
-        "total": total,
-        "by_risk": by_risk,
-        "place": request.GET.get("incident_place", ""),
-        "risk": request.GET.get("risk_level", ""),
-        "weekday": request.GET.get("incident_weekday", ""),
-        "part": request.GET.get("part_of_the_day", ""),
-        "generated_at": now,
-        "request": request,
-    })
-
-    response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = (
-        f'attachment; filename="crime_report_{now.strftime("%Y%m%d_%H%M%S")}.pdf"'
+    filename = f"crime_report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"
+    response = render_pdf_response(
+        request,
+        "admin_panel/report_pdf.html",
+        {
+            "records": records,
+            "total": total,
+            "by_risk": by_risk,
+            "place": request.GET.get("incident_place", ""),
+            "risk": request.GET.get("risk_level", ""),
+            "weekday": request.GET.get("incident_weekday", ""),
+            "part": request.GET.get("part_of_the_day", ""),
+            "generated_at": now,
+            "request": request,
+        },
+        filename,
     )
-    pisa.CreatePDF(html, dest=response)
+    if response is None:
+        return redirect("admin_panel:data_list")
     return response
 
 

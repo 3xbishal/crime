@@ -70,12 +70,6 @@
             <a href="{% url 'crime_map:map' %}?{{ request.GET.urlencode }}" class="btn btn-sm">
                 <i class="bi bi-map"></i> View Map
             </a>
-            <a href="{% url 'crime_map:public_data_export' %}?{{ request.GET.urlencode }}" class="btn secondary btn-sm">
-                <i class="bi bi-download"></i> Export CSV
-            </a>
-            <a href="{% url 'crime_map:public_data_export_pdf' %}?{{ request.GET.urlencode }}" class="btn secondary btn-sm">
-                <i class="bi bi-file-earmark-pdf"></i> Export PDF
-            </a>
         </div>
     </div>
     <div class="table-responsive">

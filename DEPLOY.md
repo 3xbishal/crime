@@ -47,6 +47,14 @@ If you need additional packages (e.g., `mysqlclient` for MySQL):
 pip install mysqlclient
 ```
 
+**Important for PDF export:** `xhtml2pdf` depends on `reportlab`. On cPanel
+shared hosting it is common for `reportlab` to be installed at an incompatible
+version, which makes PDF downloads fail silently or return a 500. The
+`requirements.txt` already pins `reportlab==4.2.5` (compatible with
+`xhtml2pdf==0.2.16`). If PDF export still fails after deploying, verify the
+installed version and check `logs/django.log` for the exact error — the PDF
+views now log the real cause there.
+
 ---
 
 ## Step 4: Configure Environment Variables
@@ -213,6 +221,7 @@ Regularly back up:
 ## Notes
 
 - The app uses **Passenger** (mod_passenger) on cPanel. Do NOT run `python manage.py runserver` in production.
+- PDF export requires `xhtml2pdf` **and** `reportlab==4.2.5` to be installed in the cPanel virtual environment. If PDF downloads are broken, run `pip install -r requirements.txt` in the app's venv and restart the Python app.
 - Static files are served directly by Apache/PHP-FPM after `collectstatic`.
 - Media files are served from the `media/` directory. For high-traffic sites, consider using a CDN.
 - For better performance, consider enabling **Redis** or **Memcached** via cPanel and updating `CACHES` in `settings.py`.
